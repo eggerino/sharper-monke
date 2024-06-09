@@ -8,6 +8,11 @@ public record Token(TokenType Type, string Literal)
     {
         {"fn", TokenType.Function},
         {"let", TokenType.Let},
+        {"true", TokenType.True},
+        {"false", TokenType.False},
+        {"if", TokenType.If},
+        {"else", TokenType.Else},
+        {"return", TokenType.Return},
     };
     
     public static TokenType LookupIdentifier(string identifier) => _keywords.TryGetValue(identifier, out var value)
@@ -27,6 +32,16 @@ public enum TokenType
     // Operators
     Assign,
     Plus,
+    Minus,
+    Bang,
+    Asterisk,
+    Slash,
+
+    LessThan,
+    GreaterThan,
+
+    Equals,
+    NotEquals,
 
     // Delimiters
     Comma,
@@ -40,4 +55,9 @@ public enum TokenType
     // Keywords
     Function,
     Let,
+    True,
+    False,
+    If,
+    Else,
+    Return,
 }

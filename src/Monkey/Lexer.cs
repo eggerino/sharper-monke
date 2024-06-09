@@ -24,14 +24,26 @@ public class Lexer
             var character = input[position];
             (var token, position) = character switch
             {
-                '=' => (new Token(TokenType.Assign, character.ToString()), position + 1),
-                ';' => (new Token(TokenType.Semicolon, character.ToString()), position + 1),
-                '(' => (new Token(TokenType.LeftParenthese, character.ToString()), position + 1),
-                ')' => (new Token(TokenType.RightParenthese, character.ToString()), position + 1),
-                '{' => (new Token(TokenType.LeftBrace, character.ToString()), position + 1),
-                '}' => (new Token(TokenType.RightBrace, character.ToString()), position + 1),
-                ',' => (new Token(TokenType.Comma, character.ToString()), position + 1),
-                '+' => (new Token(TokenType.Plus, character.ToString()), position + 1),
+                // Operators
+                '=' when Peek(position) == '=' => (new Token(TokenType.Equals, "=="), position + 2),
+                '=' => (new Token(TokenType.Assign, "="), position + 1),
+                '+' => (new Token(TokenType.Plus, "+"), position + 1),
+                '-' => (new Token(TokenType.Minus, "-"), position + 1),
+                '!' when Peek(position) == '=' => (new Token(TokenType.NotEquals, "!="), position + 2),
+                '!' => (new Token(TokenType.Bang, "!"), position + 1),
+                '*' => (new Token(TokenType.Asterisk, "*"), position + 1),
+                '/' => (new Token(TokenType.Slash, "/"), position + 1),
+                '<' => (new Token(TokenType.LessThan, "<"), position + 1),
+                '>' => (new Token(TokenType.GreaterThan, ">"), position + 1),
+
+                // Delimiters
+                ',' => (new Token(TokenType.Comma, ","), position + 1),
+                ';' => (new Token(TokenType.Semicolon, ";"), position + 1),
+                '(' => (new Token(TokenType.LeftParenthese, "("), position + 1),
+                ')' => (new Token(TokenType.RightParenthese, ")"), position + 1),
+                '{' => (new Token(TokenType.LeftBrace, "{"), position + 1),
+                '}' => (new Token(TokenType.RightBrace, "}"), position + 1),
+
                 var c when char.IsLetter(c) => GetTokenOnLetter(position),
                 var c when char.IsDigit(c) => GetTokenOnDigit(position),
                 _ => (new Token(TokenType.Illegal, character.ToString()), position + 1),
@@ -41,6 +53,8 @@ public class Lexer
 
         yield return new(TokenType.EndOfFile, "");
     }
+
+    private char? Peek(int position) => (position + 1) < _input.Length ? _input[position + 1] : null;
 
     private (Token, int) GetTokenOnLetter(int position)
     {
