@@ -103,7 +103,7 @@ if (5 < 10) {
 			new Token(TokenType.EndOfFile, ""),
 		];
 
-		var lexer = Lexer.For(input);
+		var lexer = new Lexer(input);
 		Token[] actual = [.. lexer.GetTokens()];
 
 		Assert.Equal(expected, actual);
