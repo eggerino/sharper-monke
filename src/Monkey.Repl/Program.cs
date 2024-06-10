@@ -13,7 +13,7 @@ static void Start(TextReader inputReader, TextWriter outputWriter)
     string? input;
     while ((input = inputReader.ReadLine()) is not null)
     {
-        var lexer = Lexer.For(input);
+        var lexer = new Lexer(input);
         foreach (var token in lexer.GetTokens())
         {
             outputWriter.WriteLine(token);
