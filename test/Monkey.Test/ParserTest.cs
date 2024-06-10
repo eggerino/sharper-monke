@@ -39,6 +39,28 @@ let foobar = 838383;
         Assert.Equal(name, letStatement.Name.GetTokenLiteral());
     }
 
+    [Fact]
+    public void TestReturnStatements()
+    {
+        var input = @"
+return 5;
+return 10;
+return 993322;
+";
+
+        var lexer = new Lexer(input);
+        using var parser = new Parser(lexer);
+        var program = parser.ParseProgram();
+        CheckParserErrors(parser);
+
+        Assert.Equal(3, program.Statements.Count);
+        foreach (var statement in program.Statements)
+        {
+            Assert.IsType<ReturnStatement>(statement);
+            Assert.Equal("return", statement.GetTokenLiteral());
+        }
+    }
+
     private void CheckParserErrors(Parser parser)
     {
         var errors = parser.Errors;

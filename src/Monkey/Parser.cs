@@ -58,6 +58,10 @@ public class Parser : IDisposable
         {
             case TokenType.Let:
                 return ParseLetStatement();
+
+            case TokenType.Return:
+                return ParseReturnStatement();
+
             default:
                 return null;
         }
@@ -81,12 +85,30 @@ public class Parser : IDisposable
 
         // TODO: We're skipping the expressions until we
         // encounter a semicolon
+        var value = new Identifier(token, "Some BS Expressions");
         while (_currentToken.Type != TokenType.Semicolon)
         {
             NextToken();
         }
 
-        return new(token, name, name);
+        return new(token, name, value);
+    }
+
+    private ReturnStatement? ParseReturnStatement()
+    {
+        var token = _currentToken;
+
+        NextToken();
+
+        // TODO: We're skipping the expressions until we
+        // encounter a semicolon
+        var value = new Identifier(token, "Some BS Expressions");
+        while (_currentToken.Type != TokenType.Semicolon)
+        {
+            NextToken();
+        }
+
+        return new(token, value);
     }
 
     private bool CurrentTokenIs(TokenType type) => _currentToken.Type == type;

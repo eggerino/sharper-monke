@@ -22,6 +22,11 @@ public record LetStatement(Token Token, Identifier Name, IExpression Value) : IS
     public string GetTokenLiteral() => Token.Literal;
 }
 
+public record ReturnStatement(Token Token, IExpression ReturnValue) : IStatement
+{
+    public string GetTokenLiteral() => Token.Literal;
+}
+
 public record Identifier(Token Token, string Value) : IExpression
 {
     public string GetTokenLiteral() => Token.Literal;
