@@ -10,9 +10,9 @@ public interface INode
     string GetDebugString();
 }
 
-public interface IStatement : INode {}
+public interface IStatement : INode { }
 
-public interface IExpression : INode {}
+public interface IExpression : INode { }
 
 public record Program(ImmutableList<IStatement> Statements) : INode
 {
@@ -61,11 +61,11 @@ public record ReturnStatement(Token Token, IExpression ReturnValue) : IStatement
     }
 }
 
-public record ExpressionStatement(Token Token, IExpression Expression) : IStatement
+public record ExpressionStatement(Token Token, IExpression? Expression) : IStatement
 {
     public string GetTokenLiteral() => Token.Literal;
 
-    public string GetDebugString() => Expression.GetDebugString();
+    public string GetDebugString() => Expression?.GetDebugString() ?? "";
 }
 
 public record Identifier(Token Token, string Value) : IExpression
@@ -73,4 +73,11 @@ public record Identifier(Token Token, string Value) : IExpression
     public string GetTokenLiteral() => Token.Literal;
 
     public string GetDebugString() => Value;
+}
+
+public record IntegerLiteral(Token Token, long Value) : IExpression
+{
+    public string GetTokenLiteral() => Token.Literal;
+
+    public string GetDebugString() => Token.Literal;
 }

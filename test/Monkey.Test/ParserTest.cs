@@ -19,10 +19,9 @@ let foobar = 838383;
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
         var (program, errors) = parser.ParseProgram();
+
         CheckParserErrors(errors);
-
         Assert.Equal(expectedIdentifiers.Length, program.Statements.Count);
-
         foreach (var (statement, name) in program.Statements.Zip(expectedIdentifiers))
         {
             TestLetStatement(statement, name);
@@ -52,14 +51,52 @@ return 993322;
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
         var (program, errors) = parser.ParseProgram();
-        CheckParserErrors(errors);
 
+        CheckParserErrors(errors);
         Assert.Equal(3, program.Statements.Count);
         foreach (var statement in program.Statements)
         {
             Assert.IsType<ReturnStatement>(statement);
             Assert.Equal("return", statement.GetTokenLiteral());
         }
+    }
+
+    [Fact]
+    public void TestIdentifierExrpession()
+    {
+        var input = "foobar;";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        Assert.Single(program.Statements);
+        Assert.IsType<ExpressionStatement>(program.Statements.First());
+        var statement = (ExpressionStatement)program.Statements.First();
+        Assert.IsType<Identifier>(statement.Expression);
+        var identifier = (Identifier)statement.Expression;
+        Assert.Equal("foobar", identifier.Value);
+        Assert.Equal("foobar", identifier.GetTokenLiteral());
+    }
+
+    [Fact]
+    public void TestIntegerLiteralExpression()
+    {
+        var input = "5;";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        Assert.Single(program.Statements);
+        Assert.IsType<ExpressionStatement>(program.Statements.First());
+        var statement = (ExpressionStatement)program.Statements.First();
+        Assert.IsType<IntegerLiteral>(statement.Expression);
+        var literal = (IntegerLiteral)statement.Expression;
+        Assert.Equal(5, literal.Value);
+        Assert.Equal("5", literal.GetTokenLiteral());
     }
 
     private void CheckParserErrors(IReadOnlyList<string> errors)

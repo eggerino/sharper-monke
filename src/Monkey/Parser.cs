@@ -14,6 +14,20 @@ public class Parser(Lexer lexer)
         return (program, errors);
     }
 
+    private delegate IExpression? PrefixParse();
+    private delegate IExpression InfixParse(IExpression left);
+
+    private enum Precedence
+    {
+        Lowest = 1,
+        Equals,
+        LessGreater,
+        Sum,
+        Product,
+        Prefix,
+        Call,
+    }
+
     private class Impl
     {
         private readonly IEnumerator<Token> _tokens;
@@ -22,6 +36,9 @@ public class Parser(Lexer lexer)
         private Token _currentToken = null!;
         private Token _peekToken = null!;
 
+        private readonly Dictionary<TokenType, PrefixParse> _prefixParses = [];
+        private readonly Dictionary<TokenType, InfixParse> _infixParses = [];
+
         public Impl(IEnumerator<Token> tokens, IList<string> errors)
         {
             _tokens = tokens;
@@ -29,6 +46,9 @@ public class Parser(Lexer lexer)
 
             NextToken();
             NextToken();
+
+            _prefixParses.Add(TokenType.Identifier, ParseIdentifier);
+            _prefixParses.Add(TokenType.Integer, ParseInteger);
         }
 
         private void NextToken()
@@ -69,7 +89,7 @@ public class Parser(Lexer lexer)
                     return ParseReturnStatement();
 
                 default:
-                    return null;
+                    return ParseExpressionStatement();
             }
         }
 
@@ -115,6 +135,48 @@ public class Parser(Lexer lexer)
             }
 
             return new(token, value);
+        }
+
+        private ExpressionStatement ParseExpressionStatement()
+        {
+            var token = _currentToken;
+
+            var expression = ParseExpression(Precedence.Lowest);
+
+            if (PeekTokenIs(TokenType.Semicolon))
+            {
+                NextToken();
+            }
+
+            return new(token, expression);
+        }
+
+        private IExpression? ParseExpression(Precedence precedence)
+        {
+            if (_prefixParses.TryGetValue(_currentToken.Type, out var prefix))
+            {
+                return prefix();
+            }
+
+            return null;
+        }
+
+        private Identifier ParseIdentifier()
+        {
+            return new Identifier(_currentToken, _currentToken.Literal);
+        }
+
+        private IntegerLiteral? ParseInteger()
+        {
+            var token = _currentToken;
+
+            if (long.TryParse(_currentToken.Literal, out var value))
+            {
+                return new IntegerLiteral(token, value);
+            }
+
+            _errors.Add($"Could not parse {_currentToken.Literal} as integer.");
+            return null;
         }
 
         private bool CurrentTokenIs(TokenType type) => _currentToken.Type == type;
