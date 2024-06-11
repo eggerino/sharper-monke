@@ -99,6 +99,33 @@ return 993322;
         Assert.Equal("5", literal.GetTokenLiteral());
     }
 
+    [Theory]
+    [InlineData("!5;", "!", 5L)]
+    [InlineData("-15;", "-", 15L)]
+    public void TestParsingPrefixExpressions(string input, string @operator, long integerValue)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        Assert.Single(program.Statements);
+        Assert.IsType<ExpressionStatement>(program.Statements.First());
+        var statement = (ExpressionStatement)program.Statements.First();
+        Assert.IsType<PrefixExpression>(statement.Expression);
+        var expression = (PrefixExpression)statement.Expression;
+        Assert.Equal(@operator, expression.Operator);
+        TestIntegerLiteral(expression.Right, integerValue);
+    }
+
+    private void TestIntegerLiteral(IExpression expression, long value)
+    {
+        Assert.IsType<IntegerLiteral>(expression);
+        var integerLiteral = (IntegerLiteral)expression;
+        Assert.Equal(value, integerLiteral.Value);
+        Assert.Equal(value.ToString(), integerLiteral.GetTokenLiteral());
+    }
+
     private void CheckParserErrors(IReadOnlyList<string> errors)
     {
         if (errors.Count == 0)

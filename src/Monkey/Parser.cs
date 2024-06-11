@@ -49,6 +49,8 @@ public class Parser(Lexer lexer)
 
             _prefixParses.Add(TokenType.Identifier, ParseIdentifier);
             _prefixParses.Add(TokenType.Integer, ParseInteger);
+            _prefixParses.Add(TokenType.Minus, ParsePrefixExpression);
+            _prefixParses.Add(TokenType.Bang, ParsePrefixExpression);
         }
 
         private void NextToken()
@@ -158,7 +160,13 @@ public class Parser(Lexer lexer)
                 return prefix();
             }
 
+            NoPrefixParseError(_currentToken.Type);
             return null;
+        }
+
+        private void NoPrefixParseError(TokenType type)
+        {
+            _errors.Add($"no prefix parse function for {type} found");
         }
 
         private Identifier ParseIdentifier()
@@ -177,6 +185,24 @@ public class Parser(Lexer lexer)
 
             _errors.Add($"Could not parse {_currentToken.Literal} as integer.");
             return null;
+        }
+
+        private PrefixExpression? ParsePrefixExpression()
+        {
+            var token = _currentToken;
+            var @operator = _currentToken.Literal;
+
+            NextToken();
+
+            var right = ParseExpression(Precedence.Prefix);
+
+            if (right is null)
+            {
+                _errors.Add($"Prefix operator {@operator} is not prefixed by an valid expression.");
+                return null;
+            }
+
+            return new(token, @operator, right);
         }
 
         private bool CurrentTokenIs(TokenType type) => _currentToken.Type == type;

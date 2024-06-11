@@ -81,3 +81,18 @@ public record IntegerLiteral(Token Token, long Value) : IExpression
 
     public string GetDebugString() => Token.Literal;
 }
+
+public record PrefixExpression(Token Token, string Operator, IExpression Right) : IExpression
+{
+    public string GetTokenLiteral() => Token.Literal;
+
+    public string GetDebugString()
+    {
+        var builder = new StringBuilder();
+        builder.Append("(");
+        builder.Append(Operator);
+        builder.Append(Right.GetDebugString());
+        builder.Append(")");
+        return builder.ToString();
+    }
+}
