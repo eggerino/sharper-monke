@@ -14,7 +14,7 @@ public class Lexer(string input)
             position += GetWhiteSpaceLength(position);
             if (position >= input.Length)
                 break;
-            
+
             var token = GetToken(position);
             position += token.Literal.Length;
             yield return token;
@@ -58,7 +58,7 @@ public class Lexer(string input)
             var c => (TokenType.Illegal, c.ToString()),
         };
 
-        return new(type, literal);                          
+        return new(type, literal);
     }
 
     private char? Peek(int position) => (position + 1) < input.Length ? input[position + 1] : null;
@@ -77,7 +77,7 @@ public class Lexer(string input)
         var length = GetNumberLength(position);
         var literal = input.Substring(position, length);
 
-        return (TokenType.Int, literal);
+        return (TokenType.Integer, literal);
     }
 
     private int GetLengthWhile(Func<char, bool> predicate, int position) =>
@@ -85,7 +85,7 @@ public class Lexer(string input)
             .Skip(position)
             .TakeWhile(predicate)
             .Count();
-    
+
     private int GetWhiteSpaceLength(int position) => GetLengthWhile(char.IsWhiteSpace, position);
 
     private int GetIdentifierLength(int position) => GetLengthWhile(char.IsLetter, position);

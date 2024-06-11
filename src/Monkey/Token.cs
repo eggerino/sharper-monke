@@ -9,7 +9,7 @@ public enum TokenType
 
     // Identifiers + literals
     Identifier,
-    Int,
+    Integer,
 
     // Operators
     Assign,
@@ -58,7 +58,7 @@ public static class TokenTypeLookup
         {"else", TokenType.Else},
         {"return", TokenType.Return},
     };
-    
+
     public static TokenType Identifier(string identifier) => _keywords.TryGetValue(identifier, out var value)
         ? value
         : TokenType.Identifier;
