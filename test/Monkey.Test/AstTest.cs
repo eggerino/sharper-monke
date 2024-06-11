@@ -15,6 +15,6 @@ public class AstTest
             ),
         ]);
 
-        Assert.Equal("let myVar = anotherVar;", program.DisplayString());
+        Assert.Equal("let myVar = anotherVar;", program.GetDebugString());
     }
 }

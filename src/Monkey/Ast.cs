@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -8,7 +7,7 @@ namespace Monkey.Ast;
 public interface INode
 {
     string GetTokenLiteral();
-    string DisplayString();
+    string GetDebugString();
 }
 
 public interface IStatement : INode {}
@@ -19,12 +18,12 @@ public record Program(ImmutableList<IStatement> Statements) : INode
 {
     public string GetTokenLiteral() => Statements.FirstOrDefault()?.GetTokenLiteral() ?? "";
 
-    public string DisplayString()
+    public string GetDebugString()
     {
         var builder = new StringBuilder();
         foreach (var statement in Statements)
         {
-            builder.Append(statement.DisplayString());
+            builder.Append(statement.GetDebugString());
         }
         return builder.ToString();
     }
@@ -34,14 +33,14 @@ public record LetStatement(Token Token, Identifier Name, IExpression Value) : IS
 {
     public string GetTokenLiteral() => Token.Literal;
 
-    public string DisplayString()
+    public string GetDebugString()
     {
         var builder = new StringBuilder();
         builder.Append(GetTokenLiteral());
         builder.Append(" ");
-        builder.Append(Name.DisplayString());
+        builder.Append(Name.GetDebugString());
         builder.Append(" = ");
-        builder.Append(Value.DisplayString());
+        builder.Append(Value.GetDebugString());
         builder.Append(";");
         return builder.ToString();
     }
@@ -51,12 +50,12 @@ public record ReturnStatement(Token Token, IExpression ReturnValue) : IStatement
 {
     public string GetTokenLiteral() => Token.Literal;
 
-    public string DisplayString()
+    public string GetDebugString()
     {
         var builder = new StringBuilder();
         builder.Append(GetTokenLiteral());
         builder.Append(" ");
-        builder.Append(ReturnValue.DisplayString());
+        builder.Append(ReturnValue.GetDebugString());
         builder.Append(";");
         return builder.ToString();
     }
@@ -66,12 +65,12 @@ public record ExpressionStatement(Token Token, IExpression Expression) : IStatem
 {
     public string GetTokenLiteral() => Token.Literal;
 
-    public string DisplayString() => Expression.DisplayString();
+    public string GetDebugString() => Expression.GetDebugString();
 }
 
 public record Identifier(Token Token, string Value) : IExpression
 {
     public string GetTokenLiteral() => Token.Literal;
 
-    public string DisplayString() => Value;
+    public string GetDebugString() => Value;
 }
