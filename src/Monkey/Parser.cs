@@ -1,136 +1,143 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Monkey.Ast;
 
 namespace Monkey;
 
-// TODO: Make class design nicer. Less mutable state, more expressive methods etc.
-public class Parser : IDisposable
+public class Parser(Lexer lexer)
 {
-    private IEnumerator<Token> _enumerator;
-    private Token _currentToken = null!;
-    private Token _peekToken = null!;
-    private List<string> _errors;
-
-    public Parser(Lexer lexer)
+    public (Program Program, IReadOnlyList<string> Errors) ParseProgram()
     {
-        _enumerator = lexer.GetTokens().GetEnumerator();
-        NextToken();
-        NextToken();
-        _errors = new();
+        using var tokens = lexer.GetTokens().GetEnumerator();
+        var errors = new List<string>();
+        var program = new Impl(tokens, errors).ParseProgram();
+        return (program, errors);
     }
 
-    public IReadOnlyList<string> Errors => _errors;
-
-    public void Dispose() => _enumerator.Dispose();
-
-    private void NextToken()
+    private class Impl
     {
-        _currentToken = _peekToken;
-        _peekToken = PullToken();
-    }
+        private readonly IEnumerator<Token> _tokens;
+        private readonly IList<string> _errors;
 
-    private Token PullToken() => _enumerator.MoveNext()
-        ? _enumerator.Current
-        : new(TokenType.EndOfFile, "");
+        private Token _currentToken = null!;
+        private Token _peekToken = null!;
 
-    public Program ParseProgram()
-    {
-        var statements = ImmutableList<IStatement>.Empty.ToBuilder();
-
-        while (_currentToken.Type != TokenType.EndOfFile)
+        public Impl(IEnumerator<Token> tokens, IList<string> errors)
         {
-            var statement = ParseStatment();
-            if (statement is not null)
+            _tokens = tokens;
+            _errors = errors;
+
+            NextToken();
+            NextToken();
+        }
+
+        private void NextToken()
+        {
+            _currentToken = _peekToken;
+            _peekToken = PullToken();
+        }
+
+        private Token PullToken() => _tokens.MoveNext()
+            ? _tokens.Current
+            : new(TokenType.EndOfFile, "");
+
+        public Program ParseProgram()
+        {
+            var statements = ImmutableList<IStatement>.Empty.ToBuilder();
+
+            while (_currentToken.Type != TokenType.EndOfFile)
             {
-                statements.Add(statement);
+                var statement = ParseStatment();
+                if (statement is not null)
+                {
+                    statements.Add(statement);
+                }
+                NextToken();
             }
-            NextToken();
+
+            return new(statements.ToImmutable());
         }
 
-        return new(statements.ToImmutable());
-    }
-
-    public IStatement? ParseStatment()
-    {
-        switch (_currentToken.Type)
+        public IStatement? ParseStatment()
         {
-            case TokenType.Let:
-                return ParseLetStatement();
+            switch (_currentToken.Type)
+            {
+                case TokenType.Let:
+                    return ParseLetStatement();
 
-            case TokenType.Return:
-                return ParseReturnStatement();
+                case TokenType.Return:
+                    return ParseReturnStatement();
 
-            default:
+                default:
+                    return null;
+            }
+        }
+
+        public LetStatement? ParseLetStatement()
+        {
+            var token = _currentToken;
+
+            if (!ExpectPeek(TokenType.Identifier))
+            {
                 return null;
+            }
+
+            var name = new Identifier(_currentToken, _currentToken.Literal);
+
+            if (!ExpectPeek(TokenType.Assign))
+            {
+                return null;
+            }
+
+            // TODO: We're skipping the expressions until we
+            // encounter a semicolon
+            var value = new Identifier(token, "Some BS Expressions");
+            while (_currentToken.Type != TokenType.Semicolon)
+            {
+                NextToken();
+            }
+
+            return new(token, name, value);
         }
-    }
 
-    public LetStatement? ParseLetStatement()
-    {
-        var token = _currentToken;
-
-        if (!ExpectPeek(TokenType.Identifier))
+        private ReturnStatement? ParseReturnStatement()
         {
-            return null;
-        }
+            var token = _currentToken;
 
-        var name = new Identifier(_currentToken, _currentToken.Literal);
-
-        if (!ExpectPeek(TokenType.Assign))
-        {
-            return null;
-        }
-
-        // TODO: We're skipping the expressions until we
-        // encounter a semicolon
-        var value = new Identifier(token, "Some BS Expressions");
-        while (_currentToken.Type != TokenType.Semicolon)
-        {
             NextToken();
+
+            // TODO: We're skipping the expressions until we
+            // encounter a semicolon
+            var value = new Identifier(token, "Some BS Expressions");
+            while (_currentToken.Type != TokenType.Semicolon)
+            {
+                NextToken();
+            }
+
+            return new(token, value);
         }
 
-        return new(token, name, value);
-    }
+        private bool CurrentTokenIs(TokenType type) => _currentToken.Type == type;
 
-    private ReturnStatement? ParseReturnStatement()
-    {
-        var token = _currentToken;
+        private bool PeekTokenIs(TokenType type) => _peekToken.Type == type;
 
-        NextToken();
-
-        // TODO: We're skipping the expressions until we
-        // encounter a semicolon
-        var value = new Identifier(token, "Some BS Expressions");
-        while (_currentToken.Type != TokenType.Semicolon)
+        private bool ExpectPeek(TokenType type)
         {
-            NextToken();
+            if (PeekTokenIs(type))
+            {
+                NextToken();
+                return true;
+            }
+            else
+            {
+                PeekError(type);
+                return false;
+            }
         }
 
-        return new(token, value);
-    }
-
-    private bool CurrentTokenIs(TokenType type) => _currentToken.Type == type;
-
-    private bool PeekTokenIs(TokenType type) => _peekToken.Type == type;
-
-    private bool ExpectPeek(TokenType type)
-    {
-        if (PeekTokenIs(type))
+        private void PeekError(TokenType type)
         {
-            NextToken();
-            return true;
+            _errors.Add($"expected next token to be {type}, got {_peekToken.Type} instead");
         }
-        else
-        {
-            PeekError(type);
-            return false;
-        }
-    }
-
-    private void PeekError(TokenType type)
-    {
-        _errors.Add($"expected next token to be {type}, got {_peekToken.Type} instead");
     }
 }

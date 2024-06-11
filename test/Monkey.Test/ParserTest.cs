@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Monkey.Ast;
 
@@ -16,9 +17,9 @@ let foobar = 838383;
         string[] expectedIdentifiers = ["x", "y", "foobar"];
 
         var lexer = new Lexer(input);
-        using var parser = new Parser(lexer);
-        var program = parser.ParseProgram();
-        CheckParserErrors(parser);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+        CheckParserErrors(errors);
 
         Assert.Equal(expectedIdentifiers.Length, program.Statements.Count);
 
@@ -49,9 +50,9 @@ return 993322;
 ";
 
         var lexer = new Lexer(input);
-        using var parser = new Parser(lexer);
-        var program = parser.ParseProgram();
-        CheckParserErrors(parser);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+        CheckParserErrors(errors);
 
         Assert.Equal(3, program.Statements.Count);
         foreach (var statement in program.Statements)
@@ -61,9 +62,8 @@ return 993322;
         }
     }
 
-    private void CheckParserErrors(Parser parser)
+    private void CheckParserErrors(IReadOnlyList<string> errors)
     {
-        var errors = parser.Errors;
         if (errors.Count == 0)
         {
             return;

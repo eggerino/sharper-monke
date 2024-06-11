@@ -5,7 +5,7 @@ namespace Monkey.Test;
 public class AstTest
 {
     [Fact]
-    public void TestDisplayString()
+    public void TestDebugString()
     {
         var program = new Program([
             new LetStatement(
