@@ -15,7 +15,7 @@ public class Parser(Lexer lexer)
     }
 
     private delegate IExpression? PrefixParse();
-    private delegate IExpression InfixParse(IExpression left);
+    private delegate IExpression? InfixParse(IExpression left);
 
     private enum Precedence
     {
@@ -30,6 +30,18 @@ public class Parser(Lexer lexer)
 
     private class Impl
     {
+        private static readonly IReadOnlyDictionary<TokenType, Precedence> _precedences = new Dictionary<TokenType, Precedence>
+        {
+            { TokenType.Equals, Precedence.Equals },
+            { TokenType.NotEquals, Precedence.Equals },
+            { TokenType.LessThan, Precedence.LessGreater },
+            { TokenType.GreaterThan, Precedence.LessGreater },
+            { TokenType.Plus, Precedence.Sum },
+            { TokenType.Minus, Precedence.Sum },
+            { TokenType.Slash, Precedence.Product },
+            { TokenType.Asterisk, Precedence.Product },
+        };
+
         private readonly IEnumerator<Token> _tokens;
         private readonly IList<string> _errors;
 
@@ -51,6 +63,15 @@ public class Parser(Lexer lexer)
             _prefixParses.Add(TokenType.Integer, ParseInteger);
             _prefixParses.Add(TokenType.Minus, ParsePrefixExpression);
             _prefixParses.Add(TokenType.Bang, ParsePrefixExpression);
+
+            _infixParses.Add(TokenType.Plus, ParseInfixExpression);
+            _infixParses.Add(TokenType.Minus, ParseInfixExpression);
+            _infixParses.Add(TokenType.Slash, ParseInfixExpression);
+            _infixParses.Add(TokenType.Asterisk, ParseInfixExpression);
+            _infixParses.Add(TokenType.Equals, ParseInfixExpression);
+            _infixParses.Add(TokenType.NotEquals, ParseInfixExpression);
+            _infixParses.Add(TokenType.LessThan, ParseInfixExpression);
+            _infixParses.Add(TokenType.GreaterThan, ParseInfixExpression);
         }
 
         private void NextToken()
@@ -155,13 +176,32 @@ public class Parser(Lexer lexer)
 
         private IExpression? ParseExpression(Precedence precedence)
         {
-            if (_prefixParses.TryGetValue(_currentToken.Type, out var prefix))
+            if (!_prefixParses.TryGetValue(_currentToken.Type, out var prefix))
             {
-                return prefix();
+                NoPrefixParseError(_currentToken.Type);
+                return null;
+            }
+            var expression = prefix();
+
+            while (!PeekTokenIs(TokenType.Semicolon) && precedence < PeekPrecedence())
+            {
+                if (!_infixParses.TryGetValue(_peekToken.Type, out var infix))
+                {
+                    return expression;
+                }
+
+                NextToken();
+
+                if (expression is null)
+                {
+                    _errors.Add($"Infix operator {@_currentToken.Literal} is not prefixed by a valid expression.");
+                    return expression;
+                }
+
+                expression = infix(expression);
             }
 
-            NoPrefixParseError(_currentToken.Type);
-            return null;
+            return expression;
         }
 
         private void NoPrefixParseError(TokenType type)
@@ -198,11 +238,30 @@ public class Parser(Lexer lexer)
 
             if (right is null)
             {
-                _errors.Add($"Prefix operator {@operator} is not prefixed by an valid expression.");
+                _errors.Add($"Prefix operator {@operator} is not prefixing a valid expression.");
                 return null;
             }
 
             return new(token, @operator, right);
+        }
+
+        private InfixExpression? ParseInfixExpression(IExpression left)
+        {
+            var token = _currentToken;
+            var @operator = _currentToken.Literal;
+            var precedence = CurrentPrecedence();
+
+            NextToken();
+
+            var right = ParseExpression(precedence);
+
+            if (right is null)
+            {
+                _errors.Add($"Infix operator {@operator} is not prefixing a valid expression.");
+                return null;
+            }
+
+            return new(token, left, @operator, right);
         }
 
         private bool CurrentTokenIs(TokenType type) => _currentToken.Type == type;
@@ -223,9 +282,10 @@ public class Parser(Lexer lexer)
             }
         }
 
-        private void PeekError(TokenType type)
-        {
-            _errors.Add($"expected next token to be {type}, got {_peekToken.Type} instead");
-        }
+        private void PeekError(TokenType type) => _errors.Add($"expected next token to be {type}, got {_peekToken.Type} instead");
+
+        private Precedence PeekPrecedence() => _precedences.GetValueOrDefault(_peekToken.Type, Precedence.Lowest);
+
+        private Precedence CurrentPrecedence() => _precedences.GetValueOrDefault(_currentToken.Type, Precedence.Lowest);
     }
 }

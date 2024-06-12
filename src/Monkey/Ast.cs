@@ -96,3 +96,21 @@ public record PrefixExpression(Token Token, string Operator, IExpression Right) 
         return builder.ToString();
     }
 }
+
+public record InfixExpression(Token Token, IExpression Left, string Operator, IExpression Right) : IExpression
+{
+    public string GetTokenLiteral() => Token.Literal;
+
+    public string GetDebugString()
+    {
+        var builder = new StringBuilder();
+        builder.Append("(");
+        builder.Append(Left.GetDebugString());
+        builder.Append(" ");
+        builder.Append(Operator);
+        builder.Append(" ");
+        builder.Append(Right.GetDebugString());
+        builder.Append(")");
+        return builder.ToString();
+    }
+}
