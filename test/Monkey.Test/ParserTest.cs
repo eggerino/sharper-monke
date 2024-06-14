@@ -6,58 +6,38 @@ namespace Monkey.Test;
 
 public class ParserTest
 {
-    [Fact]
-    public void TestLetStatements()
+    [Theory]
+    [InlineData("let x = 5;", "x", 5L)]
+    [InlineData("let y = true;", "y", true)]
+    [InlineData("let foobar = y;", "foobar", "y")]
+    public void TestLetStatements(string input, string expectedIdentifier, object expectedValue)
     {
-        var input = @"
-let x = 5;
-let y = 10;
-let foobar = 838383;
-";
-        string[] expectedIdentifiers = ["x", "y", "foobar"];
-
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
         var (program, errors) = parser.ParseProgram();
 
         CheckParserErrors(errors);
-        Assert.Equal(expectedIdentifiers.Length, program.Statements.Count);
-        foreach (var (statement, name) in program.Statements.Zip(expectedIdentifiers))
-        {
-            TestLetStatement(statement, name);
-        }
-    }
-
-    private void TestLetStatement(IStatement statement, string name)
-    {
-        Assert.Equal("let", statement.GetTokenLiteral());
-
+        var statement = AssertFluent.Single(program.Statements);
+        TestLetStatement(statement, expectedIdentifier);
         var letStatement = AssertFluent.IsType<LetStatement>(statement);
-
-        Assert.Equal(name, letStatement.Name.Value);
-        Assert.Equal(name, letStatement.Name.GetTokenLiteral());
+        TestLiteralExpression(letStatement.Value, expectedValue);
     }
 
-    [Fact]
-    public void TestReturnStatements()
+    [Theory]
+    [InlineData("return 5;", 5L)]
+    [InlineData("return true;", true)]
+    [InlineData("return foobar;", "foobar")]
+    public void TestReturnStatements(string input, object expectedValue)
     {
-        var input = @"
-return 5;
-return 10;
-return 993322;
-";
-
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
         var (program, errors) = parser.ParseProgram();
 
         CheckParserErrors(errors);
-        Assert.Equal(3, program.Statements.Count);
-        foreach (var statement in program.Statements)
-        {
-            Assert.IsType<ReturnStatement>(statement);
-            Assert.Equal("return", statement.GetTokenLiteral());
-        }
+        var statement = Assert.Single(program.Statements);
+        var returnStatement = AssertFluent.IsType<ReturnStatement>(statement);
+        Assert.Equal("return", returnStatement.GetTokenLiteral());
+        TestLiteralExpression(returnStatement.ReturnValue, expectedValue);
     }
 
     [Fact]
@@ -70,9 +50,9 @@ return 993322;
         var (program, errors) = parser.ParseProgram();
 
         CheckParserErrors(errors);
-        Assert.Single(program.Statements);
-        var statement = AssertFluent.IsType<ExpressionStatement>(program.Statements.First());
-        var identifier = AssertFluent.IsType<Identifier>(statement.Expression);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var identifier = AssertFluent.IsType<Identifier>(expressionStatement.Expression);
         Assert.Equal("foobar", identifier.Value);
         Assert.Equal("foobar", identifier.GetTokenLiteral());
     }
@@ -87,9 +67,9 @@ return 993322;
         var (program, errors) = parser.ParseProgram();
 
         CheckParserErrors(errors);
-        Assert.Single(program.Statements);
-        var statement = AssertFluent.IsType<ExpressionStatement>(program.Statements.First());
-        var literal = AssertFluent.IsType<IntegerLiteral>(statement.Expression);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var literal = AssertFluent.IsType<IntegerLiteral>(expressionStatement.Expression);
         Assert.Equal(5, literal.Value);
         Assert.Equal("5", literal.GetTokenLiteral());
     }
@@ -97,18 +77,22 @@ return 993322;
     [Theory]
     [InlineData("!5;", "!", 5L)]
     [InlineData("-15;", "-", 15L)]
-    public void TestParsingPrefixExpressions(string input, string @operator, long integerValue)
+    [InlineData("!foobar;", "!", "foobar")]
+    [InlineData("-foobar;", "-", "foobar")]
+    [InlineData("!true;", "!", true)]
+    [InlineData("!false;", "!", false)]
+    public void TestParsingPrefixExpressions(string input, string @operator, object value)
     {
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
         var (program, errors) = parser.ParseProgram();
 
         CheckParserErrors(errors);
-        Assert.Single(program.Statements);
-        var statement = AssertFluent.IsType<ExpressionStatement>(program.Statements.First());
-        var expression = AssertFluent.IsType<PrefixExpression>(statement.Expression);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var expression = AssertFluent.IsType<PrefixExpression>(expressionStatement.Expression);
         Assert.Equal(@operator, expression.Operator);
-        TestIntegerLiteral(expression.Right, integerValue);
+        TestLiteralExpression(expression.Right, value);
     }
 
     [Theory]
@@ -120,19 +104,28 @@ return 993322;
     [InlineData("5 < 5;", 5, "<", 5)]
     [InlineData("5 == 5;", 5, "==", 5)]
     [InlineData("5 != 5;", 5, "!=", 5)]
-    public void TestParsingInfixExpressions(string input, long leftValue, string @operator, long rightValue)
+    [InlineData("foobar + barfoo;", "foobar", "+", "barfoo")]
+    [InlineData("foobar - barfoo;", "foobar", "-", "barfoo")]
+    [InlineData("foobar * barfoo;", "foobar", "*", "barfoo")]
+    [InlineData("foobar / barfoo;", "foobar", "/", "barfoo")]
+    [InlineData("foobar > barfoo;", "foobar", ">", "barfoo")]
+    [InlineData("foobar < barfoo;", "foobar", "<", "barfoo")]
+    [InlineData("foobar == barfoo;", "foobar", "==", "barfoo")]
+    [InlineData("foobar != barfoo;", "foobar", "!=", "barfoo")]
+    [InlineData("true == true", true, "==", true)]
+    [InlineData("true != false", true, "!=", false)]
+    [InlineData("false == false", false, "==", false)]
+    public void TestParsingInfixExpressions(string input, object leftValue, string @operator, object rightValue)
     {
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
         var (program, errors) = parser.ParseProgram();
 
         CheckParserErrors(errors);
-        Assert.Single(program.Statements);
-        var statement = AssertFluent.IsType<ExpressionStatement>(program.Statements.First());
-        var expression = AssertFluent.IsType<InfixExpression>(statement.Expression);
-        TestIntegerLiteral(expression.Left, leftValue);
-        Assert.Equal(@operator, expression.Operator);
-        TestIntegerLiteral(expression.Right, rightValue);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var expression = AssertFluent.IsType<InfixExpression>(expressionStatement.Expression);
+        TestInfixExpression(expression, leftValue, @operator, rightValue);
     }
 
     [Theory]
@@ -148,6 +141,19 @@ return 993322;
     [InlineData("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))")]
     [InlineData("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))")]
     [InlineData("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))")]
+    [InlineData("true", "true")]
+    [InlineData("false", "false")]
+    [InlineData("3 > 5 == false", "((3 > 5) == false)")]
+    [InlineData("3 < 5 == true", "((3 < 5) == true)")]
+    [InlineData("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)")]
+    [InlineData("(5 + 5) * 2", "((5 + 5) * 2)")]
+    [InlineData("2 / (5 + 5)", "(2 / (5 + 5))")]
+    [InlineData("(5 + 5) * 2 * (5 + 5)", "(((5 + 5) * 2) * (5 + 5))")]
+    [InlineData("-(5 + 5)", "(-(5 + 5))")]
+    [InlineData("!(true == true)", "(!(true == true))")]
+    [InlineData("a + add(b * c) + d", "((a + add((b * c))) + d)")]
+    [InlineData("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))")]
+    [InlineData("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))")]
     public void TestOperatorPrecedenceParsing(string input, string ast)
     {
         var lexer = new Lexer(input);
@@ -159,14 +165,150 @@ return 993322;
         Assert.Equal(ast, actual);
     }
 
-    private void TestIntegerLiteral(IExpression expression, long value)
+    [Theory]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    public void TestBooleanExpression(string input, bool value)
     {
-        var integerLiteral = AssertFluent.IsType<IntegerLiteral>(expression);
-        Assert.Equal(value, integerLiteral.Value);
-        Assert.Equal(value.ToString(), integerLiteral.GetTokenLiteral());
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var boolExpression = AssertFluent.IsType<Boolean>(expressionStatement.Expression);
+        Assert.Equal(value, boolExpression.Value);
     }
 
-    private void CheckParserErrors(IReadOnlyList<string> errors)
+    [Fact]
+    public void TestIfExpression()
+    {
+        var input = "if (x < y) { x }";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var expression = AssertFluent.IsType<IfExpression>(expressionStatement.Expression);
+        TestInfixExpression(expression.Condition, "x", "<", "y");
+        var consequenceStatement = AssertFluent.Single(expression.Consequence.Statements);
+        var consequenceExpression = AssertFluent.IsType<ExpressionStatement>(consequenceStatement);
+        TestIdentifier(consequenceExpression.Expression!, "x");
+        Assert.Null(expression.Alternative);
+    }
+
+    [Fact]
+    public void TestIfElseExpression()
+    {
+        var input = "if (x < y) { x } else { y }";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var expression = AssertFluent.IsType<IfExpression>(expressionStatement.Expression);
+        TestInfixExpression(expression.Condition, "x", "<", "y");
+        var consequenceStatement = AssertFluent.Single(expression.Consequence.Statements);
+        var consequenceExpression = AssertFluent.IsType<ExpressionStatement>(consequenceStatement);
+        TestIdentifier(consequenceExpression.Expression!, "x");
+        Assert.NotNull(expression.Alternative);
+        var alternativeStatement = AssertFluent.Single(expression.Alternative.Statements);
+        var alternativeExpression = AssertFluent.IsType<ExpressionStatement>(alternativeStatement);
+        TestIdentifier(alternativeExpression.Expression!, "y");
+    }
+
+    [Fact]
+    public void TestFunctionLiteralParsing()
+    {
+        var input = "fn(x, y) { x + y; }";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var function = AssertFluent.IsType<FunctionLiteral>(expressionStatement.Expression);
+        Assert.Equal(2, function.Parameters.Count);
+        TestLiteralExpression(function.Parameters[0], "x");
+        TestLiteralExpression(function.Parameters[1], "y");
+        var bodyStatement = AssertFluent.Single(function.Body.Statements);
+        var bodyExpressionStatement = AssertFluent.IsType<ExpressionStatement>(bodyStatement);
+        TestInfixExpression(bodyExpressionStatement.Expression!, "x", "+", "y");
+    }
+
+    [Theory]
+    [InlineData("fn() {};")]
+    [InlineData("fn(x) {};", "x")]
+    [InlineData("fn(x, y, z) {};", "x", "y", "z")]
+    public void TestFunctionParameterParsing(string input, params string[] parameters)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var function = AssertFluent.IsType<FunctionLiteral>(expressionStatement.Expression);
+        Assert.Equal(parameters.Length, function.Parameters.Count);
+        foreach (var (expectedParameter, parameter) in parameters.Zip(function.Parameters))
+        {
+            TestLiteralExpression(parameter, expectedParameter);
+        }
+    }
+
+    [Fact]
+    public void TestCallExpressionParsing()
+    {
+        var input = "add(1, 2 * 3, 4 + 5);";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var callExpression = AssertFluent.IsType<CallExpression>(expressionStatement.Expression);
+        TestIdentifier(callExpression.Function, "add");
+        Assert.Equal(3, callExpression.Arguments.Count);
+        TestLiteralExpression(callExpression.Arguments[0], 1);
+        TestInfixExpression(callExpression.Arguments[1], 2, "*", 3);
+        TestInfixExpression(callExpression.Arguments[2], 4, "+", 5);
+    }
+
+    [Theory]
+    [InlineData("add();", "add")]
+    [InlineData("add(1);", "add", "1")]
+    [InlineData("add(1, 2 * 3, 4 + 5);", "add", "1", "(2 * 3)", "(4 + 5)")]
+    public void TestCallExpressionParameterParsing(string input, string function, params string[] arguments)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = AssertFluent.Single(program.Statements);
+        var expressionStatement = AssertFluent.IsType<ExpressionStatement>(statement);
+        var callExpression = AssertFluent.IsType<CallExpression>(expressionStatement.Expression);
+        TestIdentifier(callExpression.Function, function);
+        Assert.Equal(arguments.Length, callExpression.Arguments.Count);
+        foreach (var (expectedArgument, argument) in arguments.Zip(callExpression.Arguments))
+        {
+            Assert.Equal(expectedArgument, argument.GetDebugString());
+        }
+    }
+
+    private static void CheckParserErrors(IReadOnlyList<string> errors)
     {
         if (errors.Count == 0)
         {
@@ -174,5 +316,57 @@ return 993322;
         }
 
         Assert.Fail("\n\t- " + string.Join("\n\t- ", errors));
+    }
+
+    private static void TestLetStatement(IStatement statement, string name)
+    {
+        Assert.Equal("let", statement.GetTokenLiteral());
+
+        var letStatement = AssertFluent.IsType<LetStatement>(statement);
+
+        Assert.Equal(name, letStatement.Name.Value);
+        Assert.Equal(name, letStatement.Name.GetTokenLiteral());
+    }
+
+    private static void TestIdentifier(IExpression expression, string value)
+    {
+        var identifier = AssertFluent.IsType<Identifier>(expression);
+        Assert.Equal(value, identifier.Value);
+        Assert.Equal(value, identifier.GetTokenLiteral());
+    }
+
+    private static void TestIntegerLiteral(IExpression expression, long value)
+    {
+        var integerLiteral = AssertFluent.IsType<IntegerLiteral>(expression);
+        Assert.Equal(value, integerLiteral.Value);
+        Assert.Equal(value.ToString(), integerLiteral.GetTokenLiteral());
+    }
+
+    private static void TestBooleanLiteral(IExpression expression, bool value)
+    {
+        var booleanLiteral = AssertFluent.IsType<Boolean>(expression);
+        Assert.Equal(value, booleanLiteral.Value);
+        Assert.Equal(value ? "true" : "false", booleanLiteral.GetTokenLiteral());
+    }
+
+    private static void TestLiteralExpression(IExpression expression, object expected)
+    {
+        System.Action test = expected switch
+        {
+            int x => () => TestIntegerLiteral(expression, x),
+            long x => () => TestIntegerLiteral(expression, x),
+            string x => () => TestIdentifier(expression, x),
+            bool x => () => TestBooleanLiteral(expression, x),
+            _ => throw new System.Exception($"Type of expression not handled. got={expected.GetType()}"),
+        };
+        test();
+    }
+
+    private static void TestInfixExpression(IExpression expression, object left, string @operator, object right)
+    {
+        var infix = AssertFluent.IsType<InfixExpression>(expression);
+        TestLiteralExpression(infix.Left, left);
+        Assert.Equal(@operator, infix.Operator);
+        TestLiteralExpression(infix.Right, right);
     }
 }

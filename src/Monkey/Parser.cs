@@ -40,6 +40,7 @@ public class Parser(Lexer lexer)
             { TokenType.Minus, Precedence.Sum },
             { TokenType.Slash, Precedence.Product },
             { TokenType.Asterisk, Precedence.Product },
+            { TokenType.LeftParenthese, Precedence.Call },
         };
 
         private readonly IEnumerator<Token> _tokens;
@@ -63,6 +64,11 @@ public class Parser(Lexer lexer)
             _prefixParses.Add(TokenType.Integer, ParseInteger);
             _prefixParses.Add(TokenType.Minus, ParsePrefixExpression);
             _prefixParses.Add(TokenType.Bang, ParsePrefixExpression);
+            _prefixParses.Add(TokenType.True, ParseBoolean);
+            _prefixParses.Add(TokenType.False, ParseBoolean);
+            _prefixParses.Add(TokenType.LeftParenthese, ParseGroupedExpression);
+            _prefixParses.Add(TokenType.If, ParseIfExpression);
+            _prefixParses.Add(TokenType.Function, ParseFunctionLiteral);
 
             _infixParses.Add(TokenType.Plus, ParseInfixExpression);
             _infixParses.Add(TokenType.Minus, ParseInfixExpression);
@@ -72,6 +78,7 @@ public class Parser(Lexer lexer)
             _infixParses.Add(TokenType.NotEquals, ParseInfixExpression);
             _infixParses.Add(TokenType.LessThan, ParseInfixExpression);
             _infixParses.Add(TokenType.GreaterThan, ParseInfixExpression);
+            _infixParses.Add(TokenType.LeftParenthese, ParseCallExpresion);
         }
 
         private void NextToken()
@@ -132,10 +139,15 @@ public class Parser(Lexer lexer)
                 return null;
             }
 
-            // TODO: We're skipping the expressions until we
-            // encounter a semicolon
-            var value = new Identifier(token, "Some BS Expressions");
-            while (_currentToken.Type != TokenType.Semicolon)
+            NextToken();
+            var value = ParseExpression(Precedence.Lowest);
+            if (value is null)
+            {
+                _errors.Add("The = sign of the let statement is not followed by an expression.");
+                return null;
+            }
+
+            if (PeekTokenIs(TokenType.Semicolon))
             {
                 NextToken();
             }
@@ -149,10 +161,14 @@ public class Parser(Lexer lexer)
 
             NextToken();
 
-            // TODO: We're skipping the expressions until we
-            // encounter a semicolon
-            var value = new Identifier(token, "Some BS Expressions");
-            while (_currentToken.Type != TokenType.Semicolon)
+            var value = ParseExpression(Precedence.Lowest);
+            if (value is null)
+            {
+                _errors.Add("The return keyword is not followed by an expression.");
+                return null;
+            }
+
+            if (PeekTokenIs(TokenType.Semicolon))
             {
                 NextToken();
             }
@@ -245,6 +261,142 @@ public class Parser(Lexer lexer)
             return new(token, @operator, right);
         }
 
+        private Boolean ParseBoolean()
+        {
+            return new(_currentToken, CurrentTokenIs(TokenType.True));
+        }
+
+        private IExpression? ParseGroupedExpression()
+        {
+            NextToken();
+
+            var expression = ParseExpression(Precedence.Lowest);
+
+            if (!ExpectPeek(TokenType.RightParenthese))
+            {
+                return null;
+            }
+
+            return expression;
+        }
+
+        private IfExpression? ParseIfExpression()
+        {
+            var token = _currentToken;
+
+            if (!ExpectPeek(TokenType.LeftParenthese))
+            {
+                return null;
+            }
+
+            NextToken();
+            var condition = ParseExpression(Precedence.Lowest);
+            if (condition is null)
+            {
+                _errors.Add($"Left paranthese in a if expression is not followed by an expression.");
+                return null;
+            }
+
+            if (!ExpectPeek(TokenType.RightParenthese))
+            {
+                return null;
+            }
+
+            if (!ExpectPeek(TokenType.LeftBrace))
+            {
+                return null;
+            }
+
+            var consequence = ParseBlockStatement();
+            BlockStatement? alternative = null;
+
+            if (PeekTokenIs(TokenType.Else))
+            {
+                NextToken();
+
+                if (!ExpectPeek(TokenType.LeftBrace))
+                {
+                    return null;
+                }
+
+                alternative = ParseBlockStatement();
+            }
+
+            return new(token, condition, consequence, alternative);
+        }
+
+        private BlockStatement ParseBlockStatement()
+        {
+            var token = _currentToken;
+            var statements = ImmutableList<IStatement>.Empty.ToBuilder();
+
+            NextToken();
+
+            while (!CurrentTokenIs(TokenType.RightBrace) && !CurrentTokenIs(TokenType.EndOfFile))
+            {
+                var statement = ParseStatment();
+                if (statement is not null)
+                {
+                    statements.Add(statement);
+                }
+                NextToken();
+            }
+
+            return new(token, statements.ToImmutable());
+        }
+
+        private FunctionLiteral? ParseFunctionLiteral()
+        {
+            var token = _currentToken;
+
+            if (!ExpectPeek(TokenType.LeftParenthese))
+            {
+                return null;
+            }
+
+            var parameters = ParseFunctionParameters();
+            if (parameters is null)
+            {
+                return null;
+            }
+
+            if (!ExpectPeek(TokenType.LeftBrace))
+            {
+                return null;
+            }
+
+            var body = ParseBlockStatement();
+
+            return new(token, parameters, body);
+        }
+
+        private ImmutableList<Identifier>? ParseFunctionParameters()
+        {
+            var identifiers = ImmutableList<Identifier>.Empty.ToBuilder();
+            if (PeekTokenIs(TokenType.RightParenthese))
+            {
+                NextToken();
+                return [];
+            }
+
+            NextToken();
+            identifiers.Add(new Identifier(_currentToken, _currentToken.Literal));
+
+            while (PeekTokenIs(TokenType.Comma))
+            {
+                NextToken();
+                NextToken();
+                identifiers.Add(new Identifier(_currentToken, _currentToken.Literal));
+            }
+
+            if (!ExpectPeek(TokenType.RightParenthese))
+            {
+                return null;
+            }
+
+            return identifiers.ToImmutable();
+        }
+
         private InfixExpression? ParseInfixExpression(IExpression left)
         {
             var token = _currentToken;
@@ -262,6 +414,54 @@ public class Parser(Lexer lexer)
             }
 
             return new(token, left, @operator, right);
+        }
+
+        private CallExpression? ParseCallExpresion(IExpression function)
+        {
+            var token = _currentToken;
+            var arguments = ParseCallArguments();
+            if (arguments is null)
+            {
+                return null;
+            }
+            return new(token, function, arguments);
+        }
+
+        private ImmutableList<IExpression>? ParseCallArguments()
+        {
+            if (PeekTokenIs(TokenType.RightParenthese))
+            {
+                NextToken();
+                return [];
+            }
+
+            NextToken();
+            var arguments = ImmutableList<IExpression>.Empty.ToBuilder();
+            var argument = ParseExpression(Precedence.Lowest);
+            if (argument is null)
+            {
+                return null;
+            }
+            arguments.Add(argument);
+
+            while (PeekTokenIs(TokenType.Comma))
+            {
+                NextToken();
+                NextToken();
+                argument = ParseExpression(Precedence.Lowest);
+                if (argument is null)
+                {
+                    return null;
+                }
+                arguments.Add(argument);
+            }
+
+            if (!ExpectPeek(TokenType.RightParenthese))
+            {
+                return null;
+            }
+
+            return arguments.ToImmutable();
         }
 
         private bool CurrentTokenIs(TokenType type) => _currentToken.Type == type;

@@ -1,25 +1,61 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Monkey;
+
+var monkeyFace = @"            __,__
+   .--.  .-""     ""-.  .--.
+  / .. \/  .-. .-.  \/ .. \
+ | |  '|  /   Y   \  |'  | |
+ | \   \  \ 0 | 0 /  /   / |
+  \ '- ,\.-""""""""""""""-./, -' /
+   ''-' /_   ^ ^   _\ '-''
+       |  \._   _./  |
+       \   \ '~' /   /
+        '._ '-=-' _.'
+           '-----'
+";
 
 Console.WriteLine($"Hello {Environment.UserName}! This is the Monkey Programming Language!");
 Console.WriteLine("Feel free to type in commands");
 
 Start(Console.In, Console.Out);
 
-static void Start(TextReader inputReader, TextWriter outputWriter)
+void Start(TextReader inputReader, TextWriter outputWriter)
 {
-    outputWriter.Write(">> ");
-    string? input;
-    while ((input = inputReader.ReadLine()) is not null)
+    while (true)
     {
-        var lexer = new Lexer(input);
-        foreach (var token in lexer.GetTokens())
+        outputWriter.Write(">> ");
+
+        string? input;
+        if ((input = inputReader.ReadLine()) is null)
         {
-            outputWriter.WriteLine(token);
+            outputWriter.WriteLine("\nExiting the REPL");
+            return;
         }
 
-        outputWriter.Write(">> ");
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        if (errors.Count > 0)
+        {
+            PrintParserErrors(outputWriter, errors);
+        }
+        else
+        {
+            outputWriter.WriteLine(program.GetDebugString());
+        }
     }
-    outputWriter.WriteLine("\nExiting the REPL");
+}
+
+void PrintParserErrors(TextWriter outputWriter, IEnumerable<string> errors)
+{
+    outputWriter.WriteLine(monkeyFace);
+    outputWriter.WriteLine("Woops! We ran into some monkey business here!");
+    outputWriter.WriteLine(" parser errors:");
+    foreach (var error in errors)
+    {
+        outputWriter.WriteLine($"\t{error}");
+    }
 }
