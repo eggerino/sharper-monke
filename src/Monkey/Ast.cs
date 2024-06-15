@@ -128,7 +128,7 @@ public record BlockStatement(Token Token, ImmutableList<IStatement> Statements) 
 
     public string GetDebugString()
     {
-        return string.Join("", Statements);
+        return string.Join("", Statements.Select(x => x.GetDebugString()));
     }
 }
 

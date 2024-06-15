@@ -1,3 +1,8 @@
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
+using Monkey.Ast;
+
 namespace Monkey.Object;
 
 public enum ObjectType
@@ -7,6 +12,7 @@ public enum ObjectType
     Integer,
     Boolean,
     ReturnValue,
+    Function,
 }
 
 public interface IObject
@@ -49,3 +55,19 @@ public record Error(string Message) : IObject
 
     public string Inspect() => $"ERROR: {Message}";
 };
+
+public record Function(ImmutableList<Identifier> Parameters, BlockStatement Body, Environment Environment) : IObject
+{
+    public ObjectType GetObjectType() => ObjectType.Function;
+
+    public string Inspect()
+    {
+        var builder = new StringBuilder();
+        builder.Append("fn(");
+        builder.Append(string.Join(", ", Parameters.Select(x => x.GetDebugString())));
+        builder.Append(") {\n");
+        builder.Append(Body.GetDebugString());
+        builder.Append("}");
+        return builder.ToString();
+    }
+}

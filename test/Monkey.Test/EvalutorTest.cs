@@ -152,6 +152,46 @@ if (10 > 1) {
         return Evaluator.Eval(program, new());
     }
 
+    [Fact]
+    public void TestFunctionObject()
+    {
+        var input = "fn(x) { x + 2; };";
+
+        var evaluated = TestEval(input);
+        var function = Assert.IsType<Function>(evaluated);
+        var parameter = Assert.Single(function.Parameters);
+        Assert.Equal("x", parameter.GetDebugString());
+        Assert.Equal("(x + 2)", function.Body.GetDebugString());
+    }
+
+    [Theory]
+    [InlineData("let identity = fn(x) { x; }; identity(5);", 5)]
+    [InlineData("let identity = fn(x) { return x; }; identity(5);", 5)]
+    [InlineData("let double = fn(x) { x * 2; }; double(5);", 10)]
+    [InlineData("let add = fn(x, y) { x + y; }; add(5, 5);", 10)]
+    [InlineData("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20)]
+    [InlineData("fn(x) { x; }(5)", 5)]
+    public void TestFunctionApplication(string input, long expected)
+    {
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, expected);
+    }
+
+    [Fact]
+    public void TestClosures()
+    {
+        var input = @"
+let newAdder = fn(x) {
+  fn(y) { x + y };
+};
+
+let addTwo = newAdder(2);
+addTwo(2);";
+
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, 4L);
+    }
+
     private static void TestIntegerObject(IObject obj, long expected)
     {
         var result = Assert.IsType<Integer>(obj);

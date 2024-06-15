@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Monkey.Ast;
 using Monkey.Object;
 
@@ -44,8 +46,34 @@ public static class Evaluator
             },
             IfExpression x => EvalIfExpression(x, environment),
             Identifier x => EvalIdentifier(x, environment),
+            FunctionLiteral x => new Function(x.Parameters, x.Body, environment),
+            CallExpression x => Eval(x.Function, environment) switch
+            {
+                Error e => e,
+                var f => EvalExpressions(x.Arguments, environment) switch
+                {
+                [Error e] => e,
+                    var a => ApplyFunction(f, a),
+                },
+            },
             _ => _null,
         };
+    }
+
+    private static List<IObject> EvalExpressions(IEnumerable<IExpression> expressions, Environment environment)
+    {
+        var objects = new List<IObject>();
+        foreach (var expression in expressions)
+        {
+            var @object = Eval(expression, environment);
+            if (@object is Error)
+            {
+                return [@object];
+            }
+
+            objects.Add(@object);
+        }
+        return objects;
     }
 
     private static IObject EvalProgram(Program program, Environment environment)
@@ -175,6 +203,35 @@ public static class Evaluator
         {
             IObject x => x,
             null => new Error($"identifier not found: {identifier.Value}"),
+        };
+    }
+
+    private static IObject ApplyFunction(IObject function, IEnumerable<IObject> arguments)
+    {
+        return function switch
+        {
+            Function f => UnwrapReturnValue(Eval(f.Body, ExtendFunctionEnvironment(f, arguments))),
+            _ => new Error($"not a function: {function.GetObjectType()}"),
+        };
+    }
+
+    private static Environment ExtendFunctionEnvironment(Function function, IEnumerable<IObject> arguments)
+    {
+        var env = function.Environment.NewEnclosedEnvironment();
+
+        foreach (var (parameter, argument) in function.Parameters.Zip(arguments))
+        {
+            env.Set(parameter.Value, argument);
+        }
+        return env;
+    }
+
+    private static IObject UnwrapReturnValue(IObject obj)
+    {
+        return obj switch
+        {
+            ReturnValue x => x.Value,
+            _ => obj,
         };
     }
 }

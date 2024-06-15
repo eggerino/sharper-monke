@@ -5,13 +5,29 @@ namespace Monkey;
 
 public class Environment
 {
-    private Dictionary<string, IObject> _store = [];
+    private readonly Environment? _outer = null;
+    private readonly Dictionary<string, IObject> _store = [];
 
-    public IObject? Get(string name) => _store.TryGetValue(name, out var value) ? value : null;
+    private Environment(Environment outer) => _outer = outer;
+
+    public Environment() { }
+
+    public Environment NewEnclosedEnvironment() => new(this);
+
+    public IObject? Get(string name) =>
+        _store.TryGetValue(name, out var value) switch
+        {
+            true => value,
+            false => _outer switch
+            {
+                Environment outer => outer.Get(name),
+                null => null,
+            },
+        };
 
     public IObject Set(string name, IObject value)
     {
-        _store.Add(name, value);
+        _store[name] = value;
         return value;
     }
 }
