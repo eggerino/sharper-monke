@@ -41,10 +41,13 @@ void Start(TextReader inputReader, TextWriter outputWriter)
         if (errors.Count > 0)
         {
             PrintParserErrors(outputWriter, errors);
+            continue;
         }
-        else
+
+        var result = Evaluator.Eval(program);
+        if (result is not null)
         {
-            outputWriter.WriteLine(program.GetDebugString());
+            outputWriter.WriteLine(result.Inspect());
         }
     }
 }
