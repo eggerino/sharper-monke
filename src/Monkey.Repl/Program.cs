@@ -16,7 +16,7 @@ var monkeyFace = @"            __,__
            '-----'
 ";
 
-Console.WriteLine($"Hello {Environment.UserName}! This is the Monkey Programming Language!");
+Console.WriteLine($"Hello {System.Environment.UserName}! This is the Monkey Programming Language!");
 Console.WriteLine("Feel free to type in commands");
 Console.WriteLine("Enter <CTRL + D> to exit");
 
@@ -24,6 +24,7 @@ Start(Console.In, Console.Out);
 
 void Start(TextReader inputReader, TextWriter outputWriter)
 {
+    var environment = new Monkey.Environment();
     while (true)
     {
         outputWriter.Write(">> ");
@@ -45,7 +46,7 @@ void Start(TextReader inputReader, TextWriter outputWriter)
             continue;
         }
 
-        var result = Evaluator.Eval(program);
+        var result = Evaluator.Eval(program, environment);
         if (result is not null)
         {
             outputWriter.WriteLine(result.Inspect());

@@ -9,45 +9,51 @@ public static class Evaluator
     private static readonly Object.Boolean _true = new(true);
     private static readonly Object.Boolean _false = new(false);
 
-    public static IObject Eval(INode node)
+    public static IObject Eval(INode node, Environment environment)
     {
         return node switch
         {
-            Program x => EvalProgram(x),
-            ExpressionStatement x when x.Expression is not null => Eval(x.Expression),
+            Program x => EvalProgram(x, environment),
+            ExpressionStatement x when x.Expression is not null => Eval(x.Expression, environment),
             IntegerLiteral x => new Integer(x.Value),
-            BlockStatement x => EvalBlockStatements(x),
-            ReturnStatement x => Eval(x.ReturnValue) switch
+            BlockStatement x => EvalBlockStatements(x, environment),
+            ReturnStatement x => Eval(x.ReturnValue, environment) switch
             {
                 Error e => e,
                 var v => new ReturnValue(v),
             },
+            LetStatement x => Eval(x.Value, environment) switch
+            {
+                Error e => e,
+                var v => environment.Set(x.Name.Value, v)
+            },
             Ast.Boolean x => NativeBoolToBooleanObject(x.Value),
-            PrefixExpression x => Eval(x.Right) switch
+            PrefixExpression x => Eval(x.Right, environment) switch
             {
                 Error e => e,
                 var r => EvalPrefixExpression(x.Operator, r),
             },
-            InfixExpression x => Eval(x.Left) switch
+            InfixExpression x => Eval(x.Left, environment) switch
             {
                 Error e => e,
-                var l => Eval(x.Right) switch
+                var l => Eval(x.Right, environment) switch
                 {
                     Error e => e,
                     var r => EvalInfixExpression(x.Operator, l, r),
                 },
             },
-            IfExpression x => EvalIfExpression(x),
+            IfExpression x => EvalIfExpression(x, environment),
+            Identifier x => EvalIdentifier(x, environment),
             _ => _null,
         };
     }
 
-    private static IObject EvalProgram(Program program)
+    private static IObject EvalProgram(Program program, Environment environment)
     {
         IObject result = _null;
         foreach (var statement in program.Statements)
         {
-            result = Eval(statement);
+            result = Eval(statement, environment);
             if (result is ReturnValue returnValue)
             {
                 return returnValue.Value;
@@ -60,12 +66,12 @@ public static class Evaluator
         return result;
     }
 
-    private static IObject EvalBlockStatements(BlockStatement blockStatement)
+    private static IObject EvalBlockStatements(BlockStatement blockStatement, Environment environment)
     {
         IObject result = _null;
         foreach (var statement in blockStatement.Statements)
         {
-            result = Eval(statement);
+            result = Eval(statement, environment);
 
             if (result is ReturnValue)
             {
@@ -139,15 +145,15 @@ public static class Evaluator
         };
     }
 
-    private static IObject EvalIfExpression(IfExpression ifExpression)
+    private static IObject EvalIfExpression(IfExpression ifExpression, Environment environment)
     {
-        return Eval(ifExpression.Condition) switch
+        return Eval(ifExpression.Condition, environment) switch
         {
             Error e => e,
             var c => (IsTruthy(c), ifExpression.Alternative) switch
             {
-                (true, _) => Eval(ifExpression.Consequence),
-                (false, BlockStatement a) => Eval(a),
+                (true, _) => Eval(ifExpression.Consequence, environment),
+                (false, BlockStatement a) => Eval(a, environment),
                 _ => _null,
             },
         };
@@ -160,6 +166,15 @@ public static class Evaluator
             Null _ => false,
             Object.Boolean x => x.Value,
             _ => true,
+        };
+    }
+
+    private static IObject EvalIdentifier(Identifier identifier, Environment environment)
+    {
+        return environment.Get(identifier.Value) switch
+        {
+            IObject x => x,
+            null => new Error($"identifier not found: {identifier.Value}"),
         };
     }
 }

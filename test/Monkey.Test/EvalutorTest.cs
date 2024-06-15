@@ -122,11 +122,23 @@ if (10 > 1) {
   return 1;
 }
 ", "unknown operator: Boolean + Boolean")]
+    [InlineData("foobar", "identifier not found: foobar")]
     public void TestErrorHandling(string input, string message)
     {
         var evaluated = TestEval(input);
         var error = Assert.IsType<Error>(evaluated);
         Assert.Equal(message, error.Message);
+    }
+
+    [Theory]
+    [InlineData("let a = 5; a;", 5L)]
+    [InlineData("let a = 5 * 5; a;", 25L)]
+    [InlineData("let a = 5; let b = a; b;", 5L)]
+    [InlineData("let a = 5; let b = a; let c = a + b + 5; c;", 15L)]
+    public void TestLetStatements(string input, long expected)
+    {
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, expected);
     }
 
     private static IObject TestEval(string input)
@@ -137,7 +149,7 @@ if (10 > 1) {
 
         Assert.Empty(errors);
 
-        return Evaluator.Eval(program);
+        return Evaluator.Eval(program, new());
     }
 
     private static void TestIntegerObject(IObject obj, long expected)
