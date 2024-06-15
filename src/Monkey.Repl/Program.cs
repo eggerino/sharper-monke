@@ -18,6 +18,7 @@ var monkeyFace = @"            __,__
 
 Console.WriteLine($"Hello {Environment.UserName}! This is the Monkey Programming Language!");
 Console.WriteLine("Feel free to type in commands");
+Console.WriteLine("Enter <CTRL + D> to exit");
 
 Start(Console.In, Console.Out);
 
