@@ -5,6 +5,7 @@ public enum ObjectType
     Null = 0,
     Integer,
     Boolean,
+    ReturnValue,
 }
 
 public interface IObject
@@ -32,4 +33,11 @@ public record Null : IObject
     public ObjectType GetObjectType() => ObjectType.Null;
 
     public string Inspect() => "null";
+}
+
+public record ReturnValue(IObject Value) : IObject
+{
+    public ObjectType GetObjectType() => ObjectType.ReturnValue;
+
+    public string Inspect() => Value.Inspect();
 }

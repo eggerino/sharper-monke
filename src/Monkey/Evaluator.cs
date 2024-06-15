@@ -14,10 +14,11 @@ public static class Evaluator
     {
         return node switch
         {
-            Program x => EvalStatements(x.Statements),
+            Program x => EvalProgram(x),
             ExpressionStatement x when x.Expression is not null => Eval(x.Expression),
             IntegerLiteral x => new Integer(x.Value),
-            BlockStatement x => EvalStatements(x.Statements),
+            BlockStatement x => EvalBlockStatements(x),
+            ReturnStatement x => new ReturnValue(Eval(x.ReturnValue)),
             Ast.Boolean x => NativeBoolToBooleanObject(x.Value),
             PrefixExpression x => EvalPrefixExpression(x.Operator, Eval(x.Right)),
             InfixExpression x => EvalInfixExpression(x.Operator, Eval(x.Left), Eval(x.Right)),
@@ -26,12 +27,31 @@ public static class Evaluator
         };
     }
 
-    private static IObject EvalStatements(IEnumerable<IStatement> statements)
+    private static IObject EvalProgram(Program program)
     {
         IObject result = _null;
-        foreach (var statement in statements)
+        foreach (var statement in program.Statements)
         {
             result = Eval(statement);
+            if (result is ReturnValue returnValue)
+            {
+                return returnValue.Value;
+            }
+        }
+        return result;
+    }
+
+    private static IObject EvalBlockStatements(BlockStatement blockStatement)
+    {
+        IObject result = _null;
+        foreach (var statement in blockStatement.Statements)
+        {
+            result = Eval(statement);
+
+            if (result is ReturnValue)
+            {
+                return result;
+            }
         }
         return result;
     }

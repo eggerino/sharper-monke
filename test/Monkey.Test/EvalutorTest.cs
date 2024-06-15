@@ -86,6 +86,26 @@ public class EvaluatorTest
         }
     }
 
+    [Theory]
+    [InlineData("return 10;", 10L)]
+    [InlineData("return 10; 9;", 10L)]
+    [InlineData("return 2 * 5; 9;", 10L)]
+    [InlineData("9; return 2 * 5; 9;", 10L)]
+    [InlineData(@"
+if (10 > 1) {
+  if (10 > 1) {
+    return 10;
+  }
+
+  return 1;
+}
+", 10L)]
+    public void TestReturnStatements(string input, long expected)
+    {
+        var evaluated = TestEval(input);
+        TestIntegerObject(evaluated, expected);
+    }
+
     private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);
