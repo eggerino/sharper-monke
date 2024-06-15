@@ -17,9 +17,11 @@ public static class Evaluator
             Program x => EvalStatements(x.Statements),
             ExpressionStatement x when x.Expression is not null => Eval(x.Expression),
             IntegerLiteral x => new Integer(x.Value),
+            BlockStatement x => EvalStatements(x.Statements),
             Ast.Boolean x => NativeBoolToBooleanObject(x.Value),
             PrefixExpression x => EvalPrefixExpression(x.Operator, Eval(x.Right)),
             InfixExpression x => EvalInfixExpression(x.Operator, Eval(x.Left), Eval(x.Right)),
+            IfExpression x => EvalIfExpression(x),
             _ => _null,
         };
     }
@@ -90,6 +92,26 @@ public static class Evaluator
             "==" => NativeBoolToBooleanObject(left.Value == right.Value),
             "!=" => NativeBoolToBooleanObject(left.Value != right.Value),
             _ => _null,
+        };
+    }
+
+    private static IObject EvalIfExpression(IfExpression ifExpression)
+    {
+        return (IsTruthy(Eval(ifExpression.Condition)), ifExpression.Alternative) switch
+        {
+            (true, _) => Eval(ifExpression.Consequence),
+            (false, BlockStatement a) => Eval(a),
+            _ => _null,
+        };
+    }
+
+    private static bool IsTruthy(IObject obj)
+    {
+        return obj switch
+        {
+            Null _ => false,
+            Object.Boolean x => x.Value,
+            _ => true,
         };
     }
 }

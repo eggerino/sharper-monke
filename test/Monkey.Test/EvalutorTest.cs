@@ -65,7 +65,28 @@ public class EvaluatorTest
         TestBooleanObject(evaluated, expected);
     }
 
-    private static IObject? TestEval(string input)
+    [Theory]
+    [InlineData("if (true) { 10 }", 10L)]
+    [InlineData("if (false) { 10 }", null)]
+    [InlineData("if (1) { 10 }", 10L)]
+    [InlineData("if (1 < 2) { 10 }", 10L)]
+    [InlineData("if (1 > 2) { 10 }", null)]
+    [InlineData("if (1 > 2) { 10 } else { 20 }", 20L)]
+    [InlineData("if (1 < 2) { 10 } else { 20 }", 10L)]
+    public void TestIfElseExpressions(string input, long? expected)
+    {
+        var evaluated = TestEval(input);
+        if (expected.HasValue)
+        {
+            TestIntegerObject(evaluated, expected.Value);
+        }
+        else
+        {
+            TestNullObject(evaluated);
+        }
+    }
+
+    private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
@@ -76,15 +97,20 @@ public class EvaluatorTest
         return Evaluator.Eval(program);
     }
 
-    private static void TestIntegerObject(IObject? obj, long expected)
+    private static void TestIntegerObject(IObject obj, long expected)
     {
         var result = Assert.IsType<Integer>(obj);
         Assert.Equal(expected, result.Value);
     }
 
-    private static void TestBooleanObject(IObject? obj, bool expected)
+    private static void TestBooleanObject(IObject obj, bool expected)
     {
         var result = Assert.IsType<Boolean>(obj);
         Assert.Equal(expected, result.Value);
+    }
+
+    private static void TestNullObject(IObject obj)
+    {
+        Assert.Equal(ObjectType.Null, obj.GetObjectType());
     }
 }
