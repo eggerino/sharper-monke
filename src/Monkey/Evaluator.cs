@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Monkey.Ast;
 using Monkey.Object;
 
@@ -18,10 +17,26 @@ public static class Evaluator
             ExpressionStatement x when x.Expression is not null => Eval(x.Expression),
             IntegerLiteral x => new Integer(x.Value),
             BlockStatement x => EvalBlockStatements(x),
-            ReturnStatement x => new ReturnValue(Eval(x.ReturnValue)),
+            ReturnStatement x => Eval(x.ReturnValue) switch
+            {
+                Error e => e,
+                var v => new ReturnValue(v),
+            },
             Ast.Boolean x => NativeBoolToBooleanObject(x.Value),
-            PrefixExpression x => EvalPrefixExpression(x.Operator, Eval(x.Right)),
-            InfixExpression x => EvalInfixExpression(x.Operator, Eval(x.Left), Eval(x.Right)),
+            PrefixExpression x => Eval(x.Right) switch
+            {
+                Error e => e,
+                var r => EvalPrefixExpression(x.Operator, r),
+            },
+            InfixExpression x => Eval(x.Left) switch
+            {
+                Error e => e,
+                var l => Eval(x.Right) switch
+                {
+                    Error e => e,
+                    var r => EvalInfixExpression(x.Operator, l, r),
+                },
+            },
             IfExpression x => EvalIfExpression(x),
             _ => _null,
         };
@@ -36,6 +51,10 @@ public static class Evaluator
             if (result is ReturnValue returnValue)
             {
                 return returnValue.Value;
+            }
+            else if (result is Error)
+            {
+                return result;
             }
         }
         return result;
@@ -52,6 +71,10 @@ public static class Evaluator
             {
                 return result;
             }
+            else if (result is Error)
+            {
+                return result;
+            }
         }
         return result;
     }
@@ -64,7 +87,7 @@ public static class Evaluator
         {
             "!" => EvaluateBangOperatorExpression(right),
             "-" => EvaluateMinusPrefixOperatorExpression(right),
-            _ => _null,
+            _ => new Error($"unknown operator: {@operator} {right.GetObjectType()}"),
         };
     }
 
@@ -84,7 +107,7 @@ public static class Evaluator
         return right switch
         {
             Integer x => new Integer(-x.Value),
-            _ => _null,
+            _ => new Error($"unknown operator: -{right.GetObjectType()}"),
         };
     }
 
@@ -95,7 +118,8 @@ public static class Evaluator
             (_, Integer l, Integer r) => EvalIntegerInfixExpression(@operator, l, r),
             ("==", _, _) => NativeBoolToBooleanObject(left == right),
             ("!=", _, _) => NativeBoolToBooleanObject(left != right),
-            _ => _null,
+            _ when left.GetObjectType() != right.GetObjectType() => new Error($"type mismatch: {left.GetObjectType()} {@operator} {right.GetObjectType()}"),
+            _ => new Error($"unknown operator: {left.GetObjectType()} {@operator} {right.GetObjectType()}"),
         };
     }
 
@@ -111,17 +135,21 @@ public static class Evaluator
             ">" => NativeBoolToBooleanObject(left.Value > right.Value),
             "==" => NativeBoolToBooleanObject(left.Value == right.Value),
             "!=" => NativeBoolToBooleanObject(left.Value != right.Value),
-            _ => _null,
+            _ => new Error($"unknown operator: {left.GetObjectType()} {@operator} {right.GetObjectType()}"),
         };
     }
 
     private static IObject EvalIfExpression(IfExpression ifExpression)
     {
-        return (IsTruthy(Eval(ifExpression.Condition)), ifExpression.Alternative) switch
+        return Eval(ifExpression.Condition) switch
         {
-            (true, _) => Eval(ifExpression.Consequence),
-            (false, BlockStatement a) => Eval(a),
-            _ => _null,
+            Error e => e,
+            var c => (IsTruthy(c), ifExpression.Alternative) switch
+            {
+                (true, _) => Eval(ifExpression.Consequence),
+                (false, BlockStatement a) => Eval(a),
+                _ => _null,
+            },
         };
     }
 

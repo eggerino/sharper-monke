@@ -2,7 +2,8 @@ namespace Monkey.Object;
 
 public enum ObjectType
 {
-    Null = 0,
+    Error = 0,
+    Null,
     Integer,
     Boolean,
     ReturnValue,
@@ -41,3 +42,10 @@ public record ReturnValue(IObject Value) : IObject
 
     public string Inspect() => Value.Inspect();
 }
+
+public record Error(string Message) : IObject
+{
+    public ObjectType GetObjectType() => ObjectType.Error;
+
+    public string Inspect() => $"ERROR: {Message}";
+};

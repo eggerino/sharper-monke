@@ -106,6 +106,29 @@ if (10 > 1) {
         TestIntegerObject(evaluated, expected);
     }
 
+    [Theory]
+    [InlineData("5 + true;", "type mismatch: Integer + Boolean")]
+    [InlineData("5 + true; 5;", "type mismatch: Integer + Boolean")]
+    [InlineData("-true", "unknown operator: -Boolean")]
+    [InlineData("true + false;", "unknown operator: Boolean + Boolean")]
+    [InlineData("5; true + false; 5", "unknown operator: Boolean + Boolean")]
+    [InlineData("if (10 > 1) { true + false; }", "unknown operator: Boolean + Boolean")]
+    [InlineData(@"
+if (10 > 1) {
+  if (10 > 1) {
+    return true + false;
+  }
+
+  return 1;
+}
+", "unknown operator: Boolean + Boolean")]
+    public void TestErrorHandling(string input, string message)
+    {
+        var evaluated = TestEval(input);
+        var error = Assert.IsType<Error>(evaluated);
+        Assert.Equal(message, error.Message);
+    }
+
     private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);
