@@ -11,6 +11,7 @@ public enum ObjectType
     Null,
     Integer,
     Boolean,
+    String,
     ReturnValue,
     Function,
 }
@@ -19,6 +20,13 @@ public interface IObject
 {
     ObjectType GetObjectType();
     string Inspect();
+}
+
+public record Null : IObject
+{
+    public ObjectType GetObjectType() => ObjectType.Null;
+
+    public string Inspect() => "null";
 }
 
 public record Integer(long Value) : IObject
@@ -35,11 +43,11 @@ public record Boolean(bool Value) : IObject
     public string Inspect() => Value ? "true" : "false";
 }
 
-public record Null : IObject
+public record String(string Value) : IObject
 {
-    public ObjectType GetObjectType() => ObjectType.Null;
+    public ObjectType GetObjectType() => ObjectType.String;
 
-    public string Inspect() => "null";
+    public string Inspect() => Value;
 }
 
 public record ReturnValue(IObject Value) : IObject

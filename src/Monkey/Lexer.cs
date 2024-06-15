@@ -52,6 +52,7 @@ public class Lexer(string input)
             ')' => (TokenType.RightParenthese, ")"),
             '{' => (TokenType.LeftBrace, "{"),
             '}' => (TokenType.RightBrace, "}"),
+            '"' => GetString(position),
 
             var c when char.IsLetter(c) => GetTokenOnLetter(position),
             var c when char.IsDigit(c) => GetTokenOnDigit(position),
@@ -62,6 +63,14 @@ public class Lexer(string input)
     }
 
     private char? Peek(int position) => (position + 1) < input.Length ? input[position + 1] : null;
+
+    private (TokenType, string) GetString(int position)
+    {
+        var length = GetStringLength(position);
+        var literal = input.Substring(position, length);
+
+        return (TokenType.String, literal);
+    }
 
     private (TokenType, string) GetTokenOnLetter(int position)
     {
@@ -85,6 +94,8 @@ public class Lexer(string input)
             .Skip(position)
             .TakeWhile(predicate)
             .Count();
+
+    private int GetStringLength(int position) => GetLengthWhile(c => c != '"', position + 1) + 2;   // Consider quotes part of the string
 
     private int GetWhiteSpaceLength(int position) => GetLengthWhile(char.IsWhiteSpace, position);
 

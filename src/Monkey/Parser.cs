@@ -69,6 +69,7 @@ public class Parser(Lexer lexer)
             _prefixParses.Add(TokenType.LeftParenthese, ParseGroupedExpression);
             _prefixParses.Add(TokenType.If, ParseIfExpression);
             _prefixParses.Add(TokenType.Function, ParseFunctionLiteral);
+            _prefixParses.Add(TokenType.String, ParseStringLiteral);
 
             _infixParses.Add(TokenType.Plus, ParseInfixExpression);
             _infixParses.Add(TokenType.Minus, ParseInfixExpression);
@@ -395,6 +396,11 @@ public class Parser(Lexer lexer)
             }
 
             return identifiers.ToImmutable();
+        }
+
+        private StringLiteral ParseStringLiteral()
+        {
+            return StringLiteral.From(_currentToken);
         }
 
         private InfixExpression? ParseInfixExpression(IExpression left)

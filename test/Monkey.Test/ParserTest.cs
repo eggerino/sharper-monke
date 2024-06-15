@@ -308,6 +308,22 @@ public class ParserTest
         }
     }
 
+    [Fact]
+    public void TestStringLiteralExpression()
+    {
+        var input = @"""hello world"";";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = Assert.Single(program.Statements);
+        var expressionStatement = Assert.IsType<ExpressionStatement>(statement);
+        var literal = Assert.IsType<StringLiteral>(expressionStatement.Expression);
+        Assert.Equal("hello world", literal.Value);
+    }
+
     private static void CheckParserErrors(IReadOnlyList<string> errors)
     {
         if (errors.Count == 0)

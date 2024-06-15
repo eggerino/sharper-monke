@@ -18,6 +18,7 @@ public static class Evaluator
             Program x => EvalProgram(x, environment),
             ExpressionStatement x when x.Expression is not null => Eval(x.Expression, environment),
             IntegerLiteral x => new Integer(x.Value),
+            StringLiteral x => new String(x.Value),
             BlockStatement x => EvalBlockStatements(x, environment),
             ReturnStatement x => Eval(x.ReturnValue, environment) switch
             {
@@ -150,6 +151,7 @@ public static class Evaluator
         return (@operator, left, right) switch
         {
             (_, Integer l, Integer r) => EvalIntegerInfixExpression(@operator, l, r),
+            (_, String l, String r) => EvalStringInfixExpression(@operator, l, r),
             ("==", _, _) => NativeBoolToBooleanObject(left == right),
             ("!=", _, _) => NativeBoolToBooleanObject(left != right),
             _ when left.GetObjectType() != right.GetObjectType() => new Error($"type mismatch: {left.GetObjectType()} {@operator} {right.GetObjectType()}"),
@@ -167,6 +169,17 @@ public static class Evaluator
             "/" => new Integer(left.Value / right.Value),
             "<" => NativeBoolToBooleanObject(left.Value < right.Value),
             ">" => NativeBoolToBooleanObject(left.Value > right.Value),
+            "==" => NativeBoolToBooleanObject(left.Value == right.Value),
+            "!=" => NativeBoolToBooleanObject(left.Value != right.Value),
+            _ => new Error($"unknown operator: {left.GetObjectType()} {@operator} {right.GetObjectType()}"),
+        };
+    }
+
+    private static IObject EvalStringInfixExpression(string @operator, String left, String right)
+    {
+        return @operator switch
+        {
+            "+" => new String(left.Value + right.Value),
             "==" => NativeBoolToBooleanObject(left.Value == right.Value),
             "!=" => NativeBoolToBooleanObject(left.Value != right.Value),
             _ => new Error($"unknown operator: {left.GetObjectType()} {@operator} {right.GetObjectType()}"),

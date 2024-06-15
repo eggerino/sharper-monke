@@ -46,6 +46,11 @@ public class EvaluatorTest
     [InlineData("(1 < 2) == false", false)]
     [InlineData("(1 > 2) == true", false)]
     [InlineData("(1 > 2) == false", true)]
+    [InlineData(@"""hello"" == ""hello""", true)]
+    [InlineData(@"""hello"" == ""world""", false)]
+    [InlineData(@"""hello"" != ""hello""", false)]
+    [InlineData(@"""hello"" != ""world""", true)]
+    [InlineData(@"(""hello"" == ""hello"") == true", true)]
     public void TestEvalBooleanExpression(string input, bool expected)
     {
         var evaluated = TestEval(input);
@@ -59,6 +64,7 @@ public class EvaluatorTest
     [InlineData("!!true", true)]
     [InlineData("!!false", false)]
     [InlineData("!!5", true)]
+    [InlineData(@"!!""hello world""", true)]
     public void TestBangOperator(string input, bool expected)
     {
         var evaluated = TestEval(input);
@@ -123,6 +129,7 @@ if (10 > 1) {
 }
 ", "unknown operator: Boolean + Boolean")]
     [InlineData("foobar", "identifier not found: foobar")]
+    [InlineData(@"""Hello"" - ""World""", "unknown operator: String - String")]
     public void TestErrorHandling(string input, string message)
     {
         var evaluated = TestEval(input);
@@ -139,17 +146,6 @@ if (10 > 1) {
     {
         var evaluated = TestEval(input);
         TestIntegerObject(evaluated, expected);
-    }
-
-    private static IObject TestEval(string input)
-    {
-        var lexer = new Lexer(input);
-        var parser = new Parser(lexer);
-        var (program, errors) = parser.ParseProgram();
-
-        Assert.Empty(errors);
-
-        return Evaluator.Eval(program, new());
     }
 
     [Fact]
@@ -190,6 +186,37 @@ addTwo(2);";
 
         var evaluated = TestEval(input);
         TestIntegerObject(evaluated, 4L);
+    }
+
+    [Fact]
+    public void TestStringLiteral()
+    {
+        var input = @"""Hello, World!""";
+
+        var evaluated = TestEval(input);
+        var str = Assert.IsType<String>(evaluated);
+        Assert.Equal("Hello, World!", str.Value);
+    }
+
+    [Fact]
+    public void TestStringConcatenation()
+    {
+        var input = @"""Hello"" + "" "" + ""World!""";
+
+        var evaluated = TestEval(input);
+        var str = Assert.IsType<String>(evaluated);
+        Assert.Equal("Hello World!", str.Value);
+    }
+
+    private static IObject TestEval(string input)
+    {
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        Assert.Empty(errors);
+
+        return Evaluator.Eval(program, new());
     }
 
     private static void TestIntegerObject(IObject obj, long expected)

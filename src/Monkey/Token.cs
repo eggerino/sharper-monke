@@ -10,6 +10,7 @@ public enum TokenType
     // Identifiers + literals
     Identifier,
     Integer,
+    String,
 
     // Operators
     Assign,
@@ -45,6 +46,11 @@ public enum TokenType
 }
 
 public record Token(TokenType Type, string Literal);
+
+public static class StringToken
+{
+    public static string RemoveEnclosingQuotes(string literal) => literal.Substring(1, literal.Length - 2);
+}
 
 public static class TokenTypeLookup
 {

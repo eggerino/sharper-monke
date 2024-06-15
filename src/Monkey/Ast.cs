@@ -184,3 +184,12 @@ public record CallExpression(Token Token, IExpression Function, ImmutableList<IE
         return builder.ToString();
     }
 }
+
+public record StringLiteral(Token Token, string Value) : IExpression
+{
+    public static StringLiteral From(Token token) => new(token, StringToken.RemoveEnclosingQuotes(token.Literal));
+
+    public string GetTokenLiteral() => Token.Literal;
+
+    public string GetDebugString() => Value;
+}
