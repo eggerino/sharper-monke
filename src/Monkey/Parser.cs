@@ -26,6 +26,7 @@ public class Parser(Lexer lexer)
         Product,
         Prefix,
         Call,
+        Index,
     }
 
     private class Impl
@@ -41,6 +42,7 @@ public class Parser(Lexer lexer)
             { TokenType.Slash, Precedence.Product },
             { TokenType.Asterisk, Precedence.Product },
             { TokenType.LeftParenthese, Precedence.Call },
+            { TokenType.LeftBracket, Precedence.Index },
         };
 
         private readonly IEnumerator<Token> _tokens;
@@ -81,6 +83,7 @@ public class Parser(Lexer lexer)
             _infixParses.Add(TokenType.LessThan, ParseInfixExpression);
             _infixParses.Add(TokenType.GreaterThan, ParseInfixExpression);
             _infixParses.Add(TokenType.LeftParenthese, ParseCallExpresion);
+            _infixParses.Add(TokenType.LeftBracket, ParseIndexExpression);
         }
 
         private void NextToken()
@@ -480,6 +483,26 @@ public class Parser(Lexer lexer)
             }
 
             return arguments.ToImmutable();
+        }
+
+        private IndexExpression? ParseIndexExpression(IExpression left)
+        {
+            var token = _currentToken;
+
+            NextToken();
+
+            var index = ParseExpression(Precedence.Lowest);
+            if (index is null)
+            {
+                return null;
+            }
+
+            if (!ExpectPeek(TokenType.RightBracket))
+            {
+                return null;
+            }
+
+            return new(token, left, index);
         }
 
         private bool CurrentTokenIs(TokenType type) => _currentToken.Type == type;

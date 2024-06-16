@@ -207,3 +207,19 @@ public record ArrayLiteral(Token Token, ImmutableList<IExpression> Elements) : I
         return builder.ToString();
     }
 }
+
+public record IndexExpression(Token Token, IExpression Left, IExpression Index) : IExpression
+{
+    public string GetTokenLiteral() => Token.Literal;
+
+    public string GetDebugString()
+    {
+        var builder = new StringBuilder();
+        builder.Append("(");
+        builder.Append(Left.GetDebugString());
+        builder.Append("[");
+        builder.Append(Index.GetDebugString());
+        builder.Append("])");
+        return builder.ToString();
+    }
+}

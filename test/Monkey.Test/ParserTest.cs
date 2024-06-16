@@ -154,6 +154,8 @@ public class ParserTest
     [InlineData("a + add(b * c) + d", "((a + add((b * c))) + d)")]
     [InlineData("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))")]
     [InlineData("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))")]
+    [InlineData("a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)")]
+    [InlineData("add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))")]
     public void TestOperatorPrecedenceParsing(string input, string ast)
     {
         var lexer = new Lexer(input);
@@ -341,6 +343,23 @@ public class ParserTest
         TestIntegerLiteral(array.Elements[0], 1);
         TestInfixExpression(array.Elements[1], 2, "*", 2);
         TestInfixExpression(array.Elements[2], 3, "+", 3);
+    }
+
+    [Fact]
+    public void TestParsingIndexExpressions()
+    {
+        var input = "myArray[1 + 1]";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = Assert.Single(program.Statements);
+        var expressionStatement = Assert.IsType<ExpressionStatement>(statement);
+        var index = Assert.IsType<IndexExpression>(expressionStatement.Expression);
+        TestIdentifier(index.Left, "myArray");
+        TestInfixExpression(index.Index, 1, "+", 1);
     }
 
     private static void CheckParserErrors(IReadOnlyList<string> errors)
