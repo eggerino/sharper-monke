@@ -1,3 +1,4 @@
+using System.Linq;
 using Monkey.Object;
 
 namespace Monkey.Test;
@@ -214,13 +215,38 @@ addTwo(2);";
     [InlineData(@"len(""hello world"")", 11L)]
     [InlineData(@"len(1)", "argument to `len` not supported, got Integer")]
     [InlineData(@"len(""one"", ""two"")", "wrong number of arguments. got=2, want=1")]
-    public void TestBuiltinFunctions(string input, object expected)
+    [InlineData(@"len([1, 2, 3])", 3L)]
+    [InlineData(@"len([])", 0L)]
+    [InlineData(@"puts(""hello"", ""world!"")", null)]
+    [InlineData(@"first([1, 2, 3])", 1L)]
+    [InlineData(@"first([])", null)]
+    [InlineData(@"first(1)", "argument to `first` must be Array, got Integer")]
+    [InlineData(@"last([1, 2, 3])", 3L)]
+    [InlineData(@"last([])", null)]
+    [InlineData(@"last(1)", "argument to `last` must be Array, got Integer")]
+    [InlineData(@"rest([1, 2, 3])", "array", 2L, 3L)]
+    [InlineData(@"rest([])", null)]
+    [InlineData(@"push([], 1)", "array", 1L)]
+    [InlineData(@"push(1, 1)", "argument to `push` must be Array, got Integer")]
+    public void TestBuiltinFunctions(string input, params object[] expected)
     {
         var evaluated = TestEval(input);
         System.Action check = expected switch
         {
-            long number => () => TestIntegerObject(evaluated, number),
-            string text => () => Assert.Equal(text, Assert.IsType<Error>(evaluated).Message),
+            null => () => TestNullObject(evaluated),
+            [long number] => () => TestIntegerObject(evaluated, number),
+            ["array", .. var items] => () =>
+            {
+                var array = Assert.IsType<Array>(evaluated);
+                Assert.Equal(items.Length, array.Elements.Count);
+                foreach (var (expected, actual) in items.Zip(array.Elements))
+                {
+                    TestIntegerObject(actual, (long)expected);
+                }
+
+            }
+            ,
+            [string text] => () => Assert.Equal(text, Assert.IsType<Error>(evaluated).Message),
             _ => () => Assert.Fail($"expected type not supported by the test {expected.GetType()}"),
         };
         check();
