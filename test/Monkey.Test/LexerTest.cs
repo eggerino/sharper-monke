@@ -26,6 +26,7 @@ if (5 < 10) {
 10 != 9;
 ""foobar""
 ""foo bar""
+[1, 2];
 ";
 
 		Token[] expected = [
@@ -104,6 +105,12 @@ if (5 < 10) {
 			new Token(TokenType.Semicolon, ";"),
 			new Token(TokenType.String, @"""foobar"""),
 			new Token(TokenType.String, @"""foo bar"""),
+			new Token(TokenType.LeftBracket, "["),
+			new Token(TokenType.Integer, "1"),
+			new Token(TokenType.Comma, ","),
+			new Token(TokenType.Integer, "2"),
+			new Token(TokenType.RightBracket, "]"),
+			new Token(TokenType.Semicolon, ";"),
 			new Token(TokenType.EndOfFile, ""),
 		];
 

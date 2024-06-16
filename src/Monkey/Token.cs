@@ -34,6 +34,8 @@ public enum TokenType
     RightParenthese,
     LeftBrace,
     RightBrace,
+    LeftBracket,
+    RightBracket,
 
     // Keywords
     Function,

@@ -52,8 +52,10 @@ public class Lexer(string input)
             ')' => (TokenType.RightParenthese, ")"),
             '{' => (TokenType.LeftBrace, "{"),
             '}' => (TokenType.RightBrace, "}"),
-            '"' => GetString(position),
+            '[' => (TokenType.LeftBracket, "["),
+            ']' => (TokenType.RightBracket, "]"),
 
+            '"' => GetString(position),
             var c when char.IsLetter(c) => GetTokenOnLetter(position),
             var c when char.IsDigit(c) => GetTokenOnDigit(position),
             var c => (TokenType.Illegal, c.ToString()),
