@@ -193,3 +193,17 @@ public record StringLiteral(Token Token, string Value) : IExpression
 
     public string GetDebugString() => Value;
 }
+
+public record ArrayLiteral(Token Token, ImmutableList<IExpression> Elements) : IExpression
+{
+    public string GetTokenLiteral() => Token.Literal;
+
+    public string GetDebugString()
+    {
+        var builder = new StringBuilder();
+        builder.Append("[");
+        builder.Append(string.Join(", ", Elements.Select(x => x.GetDebugString())));
+        builder.Append("]");
+        return builder.ToString();
+    }
+}

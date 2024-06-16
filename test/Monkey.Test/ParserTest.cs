@@ -324,6 +324,25 @@ public class ParserTest
         Assert.Equal("hello world", literal.Value);
     }
 
+    [Fact]
+    public void TestParsingArrayLiterals()
+    {
+        var input = "[1, 2 * 2, 3 + 3]";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = Assert.Single(program.Statements);
+        var expressionStatement = Assert.IsType<ExpressionStatement>(statement);
+        var array = Assert.IsType<ArrayLiteral>(expressionStatement.Expression);
+        Assert.Equal(3, array.Elements.Count);
+        TestIntegerLiteral(array.Elements[0], 1);
+        TestInfixExpression(array.Elements[1], 2, "*", 2);
+        TestInfixExpression(array.Elements[2], 3, "+", 3);
+    }
+
     private static void CheckParserErrors(IReadOnlyList<string> errors)
     {
         if (errors.Count == 0)

@@ -70,6 +70,7 @@ public class Parser(Lexer lexer)
             _prefixParses.Add(TokenType.If, ParseIfExpression);
             _prefixParses.Add(TokenType.Function, ParseFunctionLiteral);
             _prefixParses.Add(TokenType.String, ParseStringLiteral);
+            _prefixParses.Add(TokenType.LeftBracket, ParseArrayLiteral);
 
             _infixParses.Add(TokenType.Plus, ParseInfixExpression);
             _infixParses.Add(TokenType.Minus, ParseInfixExpression);
@@ -403,6 +404,17 @@ public class Parser(Lexer lexer)
             return StringLiteral.From(_currentToken);
         }
 
+        private ArrayLiteral? ParseArrayLiteral()
+        {
+            var token = _currentToken;
+            var elements = ParseExpressionList(TokenType.RightBracket);
+            if (elements is null)
+            {
+                return null;
+            }
+            return new(token, elements);
+        }
+
         private InfixExpression? ParseInfixExpression(IExpression left)
         {
             var token = _currentToken;
@@ -425,7 +437,7 @@ public class Parser(Lexer lexer)
         private CallExpression? ParseCallExpresion(IExpression function)
         {
             var token = _currentToken;
-            var arguments = ParseCallArguments();
+            var arguments = ParseExpressionList(TokenType.RightParenthese);
             if (arguments is null)
             {
                 return null;
@@ -433,9 +445,9 @@ public class Parser(Lexer lexer)
             return new(token, function, arguments);
         }
 
-        private ImmutableList<IExpression>? ParseCallArguments()
+        private ImmutableList<IExpression>? ParseExpressionList(TokenType end)
         {
-            if (PeekTokenIs(TokenType.RightParenthese))
+            if (PeekTokenIs(end))
             {
                 NextToken();
                 return [];
@@ -462,7 +474,7 @@ public class Parser(Lexer lexer)
                 arguments.Add(argument);
             }
 
-            if (!ExpectPeek(TokenType.RightParenthese))
+            if (!ExpectPeek(end))
             {
                 return null;
             }
