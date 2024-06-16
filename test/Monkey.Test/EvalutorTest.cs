@@ -208,6 +208,24 @@ addTwo(2);";
         Assert.Equal("Hello World!", str.Value);
     }
 
+    [Theory]
+    [InlineData(@"len("""")", 0L)]
+    [InlineData(@"len(""four"")", 4L)]
+    [InlineData(@"len(""hello world"")", 11L)]
+    [InlineData(@"len(1)", "argument to `len` not supported, got Integer")]
+    [InlineData(@"len(""one"", ""two"")", "wrong number of arguments. got=2, want=1")]
+    public void TestBuiltinFunctions(string input, object expected)
+    {
+        var evaluated = TestEval(input);
+        System.Action check = expected switch
+        {
+            long number => () => TestIntegerObject(evaluated, number),
+            string text => () => Assert.Equal(text, Assert.IsType<Error>(evaluated).Message),
+            _ => () => Assert.Fail($"expected type not supported by the test {expected.GetType()}"),
+        };
+        check();
+    }
+
     private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);

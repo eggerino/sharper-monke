@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,7 @@ public enum ObjectType
     String,
     ReturnValue,
     Function,
+    Builtin,
 }
 
 public interface IObject
@@ -78,4 +80,13 @@ public record Function(ImmutableList<Identifier> Parameters, BlockStatement Body
         builder.Append("}");
         return builder.ToString();
     }
+}
+
+public delegate IObject BuiltinFunction(IEnumerable<IObject> arguments);
+
+public record Builtin(BuiltinFunction Function) : IObject
+{
+    public ObjectType GetObjectType() => ObjectType.Builtin;
+
+    public string Inspect() => "builtin function";
 }

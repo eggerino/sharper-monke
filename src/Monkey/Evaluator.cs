@@ -7,9 +7,9 @@ namespace Monkey;
 
 public static class Evaluator
 {
-    private static readonly Null _null = new();
-    private static readonly Object.Boolean _true = new(true);
-    private static readonly Object.Boolean _false = new(false);
+    public static Null Null { get; } = new();
+    public static Object.Boolean True { get; } = new(true);
+    public static Object.Boolean False { get; } = new(false);
 
     public static IObject Eval(INode node, Environment environment)
     {
@@ -57,7 +57,7 @@ public static class Evaluator
                     var a => ApplyFunction(f, a),
                 },
             },
-            _ => _null,
+            _ => Null,
         };
     }
 
@@ -79,7 +79,7 @@ public static class Evaluator
 
     private static IObject EvalProgram(Program program, Environment environment)
     {
-        IObject result = _null;
+        IObject result = Null;
         foreach (var statement in program.Statements)
         {
             result = Eval(statement, environment);
@@ -97,7 +97,7 @@ public static class Evaluator
 
     private static IObject EvalBlockStatements(BlockStatement blockStatement, Environment environment)
     {
-        IObject result = _null;
+        IObject result = Null;
         foreach (var statement in blockStatement.Statements)
         {
             result = Eval(statement, environment);
@@ -114,7 +114,7 @@ public static class Evaluator
         return result;
     }
 
-    private static Object.Boolean NativeBoolToBooleanObject(bool value) => value ? _true : _false;
+    private static Object.Boolean NativeBoolToBooleanObject(bool value) => value ? True : False;
 
     private static IObject EvalPrefixExpression(string @operator, IObject right)
     {
@@ -130,10 +130,10 @@ public static class Evaluator
     {
         return right switch
         {
-            Object.Boolean x when x.Value => _false,
-            Object.Boolean x when !x.Value => _true,
-            Null _ => _true,
-            _ => _false,
+            Object.Boolean x when x.Value => False,
+            Object.Boolean x when !x.Value => True,
+            Null _ => True,
+            _ => False,
         };
     }
 
@@ -195,7 +195,7 @@ public static class Evaluator
             {
                 (true, _) => Eval(ifExpression.Consequence, environment),
                 (false, BlockStatement a) => Eval(a, environment),
-                _ => _null,
+                _ => Null,
             },
         };
     }
@@ -215,7 +215,11 @@ public static class Evaluator
         return environment.Get(identifier.Value) switch
         {
             IObject x => x,
-            null => new Error($"identifier not found: {identifier.Value}"),
+            null => Builtins.Get(identifier.Value) switch
+            {
+                Builtin x => x,
+                null => new Error($"identifier not found: {identifier.Value}"),
+            }
         };
     }
 
@@ -224,6 +228,7 @@ public static class Evaluator
         return function switch
         {
             Function f => UnwrapReturnValue(Eval(f.Body, ExtendFunctionEnvironment(f, arguments))),
+            Builtin f => f.Function(arguments),
             _ => new Error($"not a function: {function.GetObjectType()}"),
         };
     }
