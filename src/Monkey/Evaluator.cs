@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Monkey.Ast;
 using Monkey.Object;
@@ -55,6 +56,20 @@ public static class Evaluator
                 {
                 [Error e] => e,
                     var a => ApplyFunction(f, a),
+                },
+            },
+            ArrayLiteral x => EvalExpressions(x.Elements, environment) switch
+            {
+            [Error e] => e,
+                var elements => new Array(elements.ToImmutableList()),
+            },
+            IndexExpression x => Eval(x.Left, environment) switch
+            {
+                Error e => e,
+                var l => Eval(x.Index, environment) switch
+                {
+                    Error e => e,
+                    var i => EvalIndexExpression(l, i),
                 },
             },
             _ => Null,
@@ -231,6 +246,28 @@ public static class Evaluator
             Builtin f => f.Function(arguments),
             _ => new Error($"not a function: {function.GetObjectType()}"),
         };
+    }
+
+    private static IObject EvalIndexExpression(IObject left, IObject index)
+    {
+        return (left, index) switch
+        {
+            (Array a, Integer i) => EvalArrayIndexExpression(a, i),
+            _ => new Error($"index operator not supported: {left.GetObjectType()}"),
+        };
+    }
+
+    private static IObject EvalArrayIndexExpression(Array array, Integer index)
+    {
+        var elements = array.Elements;
+        var i = index.Value;
+
+        if (i < 0 || i >= elements.Count)
+        {
+            return Null;
+        }
+
+        return elements[(int)i];
     }
 
     private static Environment ExtendFunctionEnvironment(Function function, IEnumerable<IObject> arguments)

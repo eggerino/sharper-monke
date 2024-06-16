@@ -226,6 +226,43 @@ addTwo(2);";
         check();
     }
 
+    [Fact]
+    public void TestArrayLiterals()
+    {
+        var input = "[1, 2 * 2, 3 + 3]";
+
+        var evaluated = TestEval(input);
+        var array = Assert.IsType<Array>(evaluated);
+        Assert.Equal(3, array.Elements.Count);
+        TestIntegerObject(array.Elements[0], 1);
+        TestIntegerObject(array.Elements[1], 4);
+        TestIntegerObject(array.Elements[2], 6);
+    }
+
+    [Theory]
+    [InlineData("[1, 2, 3][0]", 1L)]
+    [InlineData("[1, 2, 3][1]", 2L)]
+    [InlineData("[1, 2, 3][2]", 3L)]
+    [InlineData("let i = 0; [1][i];", 1L)]
+    [InlineData("[1, 2, 3][1 + 1];", 3L)]
+    [InlineData("let myArray = [1, 2, 3]; myArray[2];", 3L)]
+    [InlineData("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6L)]
+    [InlineData("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2L)]
+    [InlineData("[1, 2, 3][3]", null)]
+    [InlineData("[1, 2, 3][-1]", null)]
+    public void TestArrayIndexExpressions(string input, long? expected)
+    {
+        var evaluated = TestEval(input);
+        if (expected.HasValue)
+        {
+            TestIntegerObject(evaluated, expected.Value);
+        }
+        else
+        {
+            TestNullObject(evaluated);
+        }
+    }
+
     private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);

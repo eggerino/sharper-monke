@@ -16,6 +16,7 @@ public enum ObjectType
     ReturnValue,
     Function,
     Builtin,
+    Array,
 }
 
 public interface IObject
@@ -89,4 +90,18 @@ public record Builtin(BuiltinFunction Function) : IObject
     public ObjectType GetObjectType() => ObjectType.Builtin;
 
     public string Inspect() => "builtin function";
+}
+
+public record Array(ImmutableList<IObject> Elements) : IObject
+{
+    public ObjectType GetObjectType() => ObjectType.Array;
+
+    public string Inspect()
+    {
+        var builder = new StringBuilder();
+        builder.Append("[");
+        builder.Append(string.Join(", ", Elements.Select(x => x.Inspect())));
+        builder.Append("]");
+        return builder.ToString();
+    }
 }
