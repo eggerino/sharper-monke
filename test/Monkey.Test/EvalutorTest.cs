@@ -132,6 +132,7 @@ if (10 > 1) {
 ", "unknown operator: Boolean + Boolean")]
     [InlineData("foobar", "identifier not found: foobar")]
     [InlineData(@"""Hello"" - ""World""", "unknown operator: String - String")]
+    [InlineData(@"{""name"": ""Monkey""}[fn(x) { x }];", "unusable as hash key: Function")]
     public void TestErrorHandling(string input, string message)
     {
         var evaluated = TestEval(input);
@@ -322,6 +323,28 @@ addTwo(2);";
             TestIntegerObject(actual, expectedValue);
         }
     }
+
+    [Theory]
+    [InlineData(@"{""foo"": 5}[""foo""]", 5L)]
+    [InlineData(@"{""foo"": 5}[""bar""]", null)]
+    [InlineData(@"let key = ""foo""; {""foo"": 5}[key]", 5L)]
+    [InlineData(@"{}[""foo""]", null)]
+    [InlineData(@"{5: 5}[5]", 5L)]
+    [InlineData(@"{true: 5}[true]", 5L)]
+    [InlineData(@"{false: 5}[false]", 5L)]
+    public void TestHashIndexExpressions(string input, long? expected)
+    {
+        var evaluated = TestEval(input);
+        if (evaluated is Integer integer)
+        {
+            TestIntegerObject(integer, expected!.Value);
+        }
+        else
+        {
+            TestNullObject(evaluated);
+        }
+    }
+
     private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);

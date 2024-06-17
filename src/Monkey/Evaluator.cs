@@ -254,6 +254,7 @@ public static class Evaluator
         return (left, index) switch
         {
             (Array a, Integer i) => EvalArrayIndexExpression(a, i),
+            (Hash h, IObject key) => EvalHashIndexExpression(h, key),
             _ => new Error($"index operator not supported: {left.GetObjectType()}"),
         };
     }
@@ -269,6 +270,15 @@ public static class Evaluator
         }
 
         return elements[(int)i];
+    }
+
+    private static IObject EvalHashIndexExpression(Hash hash, IObject key)
+    {
+        return key switch
+        {
+            IHashable k => hash.Pairs.TryGetValue(k, out var value) ? value : Null,
+            _ => new Error($"unusable as hash key: {key.GetObjectType()}"),
+        };
     }
 
     private static IObject EvalHashLiteral(HashLiteral hash, Environment environment)
