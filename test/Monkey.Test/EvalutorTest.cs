@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Monkey.Object;
 
@@ -289,6 +290,38 @@ addTwo(2);";
         }
     }
 
+    [Fact]
+    public void TestHashLiterals()
+    {
+        var input = @"let two = ""two"";
+{
+    ""one"": 10 - 9,
+    two: 1 + 1,
+    ""thr"" + ""ee"": 6 / 2,
+    4: 4,
+    true: 5,
+    false: 6
+}";
+        var expected = new Dictionary<IHashable, long>
+        {
+            {new String("one"), 1},
+            {new String("two"), 2},
+            {new String("three"), 3},
+            {new Integer(4), 4},
+            {new Boolean(true), 5},
+            {new Boolean(false), 6},
+        };
+
+        var evaluated = TestEval(input);
+        var hash = Assert.IsType<Hash>(evaluated);
+        Assert.Equal(expected.Count, hash.Pairs.Count);
+
+        foreach (var (expectedKey, expectedValue) in expected)
+        {
+            var actual = hash.Pairs[expectedKey];
+            TestIntegerObject(actual, expectedValue);
+        }
+    }
     private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);

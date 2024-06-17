@@ -72,6 +72,7 @@ public static class Evaluator
                     var i => EvalIndexExpression(l, i),
                 },
             },
+            HashLiteral x => EvalHashLiteral(x, environment),
             _ => Null,
         };
     }
@@ -268,6 +269,35 @@ public static class Evaluator
         }
 
         return elements[(int)i];
+    }
+
+    private static IObject EvalHashLiteral(HashLiteral hash, Environment environment)
+    {
+        var pairs = ImmutableDictionary<IHashable, IObject>.Empty.ToBuilder();
+
+        foreach (var (keyExpression, valueExpression) in hash.Pairs)
+        {
+            var key = Eval(keyExpression, environment);
+            if (key is Error)
+            {
+                return key;
+            }
+
+            if (key is not IHashable)
+            {
+                return new Error($"unusable as hash key: {key.GetObjectType()}");
+            }
+
+            var value = Eval(valueExpression, environment);
+            if (value is Error)
+            {
+                return value;
+            }
+
+            pairs.Add((IHashable)key, value);
+        }
+
+        return new Hash(pairs.ToImmutable());
     }
 
     private static Environment ExtendFunctionEnvironment(Function function, IEnumerable<IObject> arguments)
