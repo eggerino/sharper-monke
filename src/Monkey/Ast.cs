@@ -223,3 +223,17 @@ public record IndexExpression(Token Token, IExpression Left, IExpression Index) 
         return builder.ToString();
     }
 }
+
+public record HashLiteral(Token Token, ImmutableList<(IExpression Key, IExpression Value)> Pairs) : IExpression
+{
+    public string GetTokenLiteral() => Token.Literal;
+
+    public string GetDebugString()
+    {
+        var builder = new StringBuilder();
+        builder.Append("{");
+        builder.Append(string.Join(", ", Pairs.Select(x => $"{x.Key.GetDebugString()}: {x.Value.GetDebugString()}")));
+        builder.Append("}");
+        return builder.ToString();
+    }
+}

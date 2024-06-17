@@ -73,6 +73,7 @@ public class Parser(Lexer lexer)
             _prefixParses.Add(TokenType.Function, ParseFunctionLiteral);
             _prefixParses.Add(TokenType.String, ParseStringLiteral);
             _prefixParses.Add(TokenType.LeftBracket, ParseArrayLiteral);
+            _prefixParses.Add(TokenType.LeftBrace, ParseHashLiteral);
 
             _infixParses.Add(TokenType.Plus, ParseInfixExpression);
             _infixParses.Add(TokenType.Minus, ParseInfixExpression);
@@ -416,6 +417,48 @@ public class Parser(Lexer lexer)
                 return null;
             }
             return new(token, elements);
+        }
+
+        private HashLiteral? ParseHashLiteral()
+        {
+            var token = _currentToken;
+            var pairs = ImmutableList<(IExpression Key, IExpression Value)>.Empty.ToBuilder();
+
+            while (!PeekTokenIs(TokenType.RightBrace))
+            {
+                NextToken();
+                var key = ParseExpression(Precedence.Lowest);
+                if (key is null)
+                {
+                    return null;
+                }
+
+                if (!ExpectPeek(TokenType.Colon))
+                {
+                    return null;
+                }
+                NextToken();
+
+                var value = ParseExpression(Precedence.Lowest);
+                if (value is null)
+                {
+                    return null;
+                }
+
+                pairs.Add((key, value));
+
+                if (!PeekTokenIs(TokenType.RightBrace) && !ExpectPeek(TokenType.Comma))
+                {
+                    return null;
+                }
+            }
+
+            if (!ExpectPeek(TokenType.RightBrace))
+            {
+                return null;
+            }
+
+            return new(token, pairs.ToImmutable());
         }
 
         private InfixExpression? ParseInfixExpression(IExpression left)

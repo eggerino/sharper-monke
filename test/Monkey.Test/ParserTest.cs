@@ -362,6 +362,66 @@ public class ParserTest
         TestInfixExpression(index.Index, 1, "+", 1);
     }
 
+    [Fact]
+    public void TestParsingHashLiteralsKeys()
+    {
+        var input = @"{""one"": 1, true: 2, 5: 3}";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = Assert.Single(program.Statements);
+        var expressionStatement = Assert.IsType<ExpressionStatement>(statement);
+        var hash = Assert.IsType<HashLiteral>(expressionStatement.Expression);
+        Assert.Equal(3, hash.Pairs.Count);
+
+        var firstKey = Assert.IsType<StringLiteral>(hash.Pairs[0].Key);
+        Assert.Equal("one", firstKey.Value);
+        TestIntegerLiteral(hash.Pairs[0].Value, 1L);
+        TestBooleanLiteral(hash.Pairs[1].Key, true);
+        TestIntegerLiteral(hash.Pairs[1].Value, 2L);
+        TestIntegerLiteral(hash.Pairs[2].Key, 5L);
+        TestIntegerLiteral(hash.Pairs[2].Value, 3L);
+    }
+
+    [Fact]
+    public void TestParsingEmptyHashLiteral()
+    {
+        var input = "{}";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = Assert.Single(program.Statements);
+        var expressionStatement = Assert.IsType<ExpressionStatement>(statement);
+        var hash = Assert.IsType<HashLiteral>(expressionStatement.Expression);
+        Assert.Empty(hash.Pairs);
+    }
+
+    [Fact]
+    public void TestParsingHashLiteralsWithExpressions()
+    {
+        var input = @"{""one"": 0 + 1, ""two"": 10 - 8, ""three"": 15 / 5}";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = Assert.Single(program.Statements);
+        var expressionStatement = Assert.IsType<ExpressionStatement>(statement);
+        var hash = Assert.IsType<HashLiteral>(expressionStatement.Expression);
+        Assert.Equal(3, hash.Pairs.Count);
+
+        TestInfixExpression(hash.Pairs[0].Value, 0, "+", 1);
+        TestInfixExpression(hash.Pairs[1].Value, 10, "-", 8);
+        TestInfixExpression(hash.Pairs[2].Value, 15, "/", 5);
+    }
+
     private static void CheckParserErrors(IReadOnlyList<string> errors)
     {
         if (errors.Count == 0)

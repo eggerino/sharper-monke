@@ -48,6 +48,7 @@ public class Lexer(string input)
             // Delimiters
             ',' => (TokenType.Comma, ","),
             ';' => (TokenType.Semicolon, ";"),
+            ':' => (TokenType.Colon, ":"),
             '(' => (TokenType.LeftParenthese, "("),
             ')' => (TokenType.RightParenthese, ")"),
             '{' => (TokenType.LeftBrace, "{"),

@@ -29,6 +29,7 @@ public enum TokenType
     // Delimiters
     Comma,
     Semicolon,
+    Colon,
 
     LeftParenthese,
     RightParenthese,
