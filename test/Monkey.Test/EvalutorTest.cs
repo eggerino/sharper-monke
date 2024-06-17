@@ -229,7 +229,7 @@ addTwo(2);";
     [InlineData(@"rest([1, 2, 3])", "array", 2L, 3L)]
     [InlineData(@"rest([])", null)]
     [InlineData(@"push([], 1)", "array", 1L)]
-    [InlineData(@"push(1, 1)", "argument to `push` must be Array, got Integer")]
+    [InlineData(@"push(1, 1)", "argument to `push` must be Array or Hash, got Integer")]
     public void TestBuiltinFunctions(string input, params object[] expected)
     {
         var evaluated = TestEval(input);
