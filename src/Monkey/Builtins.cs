@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Monkey.Object;
 
@@ -13,6 +14,7 @@ public static class Builtins
         {"last", new(Last)},
         {"rest", new(Rest)},
         {"push", new(Push)},
+        {"keys", new(Keys)},
         {"puts", new(Puts)},
     };
 
@@ -24,6 +26,7 @@ public static class Builtins
         {
         [String str] => new Integer(str.Value.Length),
         [Array arr] => new Integer(arr.Elements.Count),
+        [Hash hash] => new Integer(hash.Pairs.Count),
         [var arg] => new Error($"argument to `len` not supported, got {arg.GetObjectType()}"),
         [.. var args] => new Error($"wrong number of arguments. got={args.Count}, want=1"),
         };
@@ -66,13 +69,27 @@ public static class Builtins
     {
         return arguments.ToList() switch
         {
+        [] => new Error("no arguments provided for `push`"),
         [Array arr, var item] => arr with { Elements = arr.Elements.Add(item) },
-        [var arg1, var _] => new Error($"argument to `push` must be Array, got {arg1.GetObjectType()}"),
-        [.. var args] => new Error($"wrong number of arguments. got={args.Count}, want=2"),
+        [Array _, .. var args] => new Error($"wrong number of arguments. got={args.Count + 1}, want=2"),
+        [Hash hash, IHashable key, var item] => hash with { Pairs = hash.Pairs.Add(key, item) },
+        [Hash hash, var key, var _] => new Error($"second argument to `push` must be hashable, got {key.GetObjectType()}"),
+        [Hash _, .. var args] => new Error($"wrong number of arguments. got={args.Count + 1}, want=3"),
+        [var arg1, ..] => new Error($"argument to `push` must be Array or Hash, got {arg1.GetObjectType()}"),
         };
     }
 
-    private static IObject Puts(IEnumerable<IObject> arguments)
+    private static IObject Keys(IEnumerable<IObject> arguments)
+    {
+        return arguments.ToList() switch
+        {
+        [Hash hash] => new Array(hash.Pairs.Keys.Cast<IObject>().ToImmutableList()),
+        [var arg] => new Error($"argument to `keys` must be Hash, got {arg.GetObjectType()}"),
+        [.. var args] => new Error($"wrong number of arguments. got={args.Count}, want=1"),
+        };
+    }
+
+    private static Null Puts(IEnumerable<IObject> arguments)
     {
         foreach (var argument in arguments)
         {
