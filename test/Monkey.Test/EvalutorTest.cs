@@ -345,6 +345,31 @@ addTwo(2);";
         }
     }
 
+    [Theory]
+    [InlineData("quote(5)", "5")]
+    [InlineData("quote(5 + 8)", "(5 + 8)")]
+    [InlineData("quote(foobar)", "foobar")]
+    [InlineData("quote(foobar + barfoo)", "(foobar + barfoo)")]
+    [InlineData("quote(unquote(4))", "4")]
+    [InlineData("quote(unquote(4 + 4))", "8")]
+    [InlineData("quote(8 + unquote(4 + 4))", "(8 + 8)")]
+    [InlineData("quote(unquote(4 + 4) + 8)", "(8 + 8)")]
+    [InlineData("let foobar = 8; quote(foobar)", "foobar")]
+    [InlineData("let foobar = 8; quote(unquote(foobar))", "8")]
+    [InlineData("quote(unquote(true))", "true")]
+    [InlineData("quote(unquote(true == false))", "false")]
+    [InlineData("quote(unquote(quote(4 + 4)))", "(4 + 4)")]
+    [InlineData("let quotedInfixExpression = quote(4 + 4); quote(unquote(4 + 4) + unquote(quotedInfixExpression))", "(8 + (4 + 4))")]
+
+    public void TestQuoteUnquote(string input, string expected)
+    {
+        var evaluated = TestEval(input);
+
+        var quote = Assert.IsType<Quote>(evaluated);
+        Assert.NotNull(quote.Node);
+        Assert.Equal(expected, quote.Node.GetDebugString());
+    }
+
     private static IObject TestEval(string input)
     {
         var lexer = new Lexer(input);

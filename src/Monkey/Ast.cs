@@ -237,3 +237,37 @@ public record HashLiteral(Token Token, ImmutableList<(IExpression Key, IExpressi
         return builder.ToString();
     }
 }
+
+public delegate INode Transformer(INode node);
+
+public static class INodeExtensions
+{
+    public static INode Transform(this INode node, Transformer transformer)
+    {
+        return node switch
+        {
+            Program x => x with { Statements = x.Statements.Select(s => s.Transform(transformer)).Cast<IStatement>().ToImmutableList() },
+            ExpressionStatement x => x with { Expression = x.Expression?.Transform(transformer) as IExpression },
+            InfixExpression x => x with { Left = (IExpression)x.Left.Transform(transformer), Right = (IExpression)x.Right.Transform(transformer) },
+            PrefixExpression x => x with { Right = (IExpression)x.Right.Transform(transformer) },
+            IndexExpression x => x with { Left = (IExpression)x.Left.Transform(transformer), Index = (IExpression)x.Index.Transform(transformer) },
+            IfExpression x => x with
+            {
+                Condition = (IExpression)x.Condition.Transform(transformer),
+                Consequence = (BlockStatement)x.Consequence.Transform(transformer),
+                Alternative = (BlockStatement?)x.Alternative?.Transform(transformer),
+            },
+            BlockStatement x => x with { Statements = x.Statements.Select(s => s.Transform(transformer)).Cast<IStatement>().ToImmutableList() },
+            ReturnStatement x => x with { ReturnValue = (IExpression)x.ReturnValue.Transform(transformer) },
+            LetStatement x => x with { Value = (IExpression)x.Value.Transform(transformer) },
+            FunctionLiteral x => x with
+            {
+                Parameters = x.Parameters.Select(p => p.Transform(transformer)).Cast<Identifier>().ToImmutableList(),
+                Body = (BlockStatement)x.Body.Transform(transformer)
+            },
+            ArrayLiteral x => x with { Elements = x.Elements.Select(e => e.Transform(transformer)).Cast<IExpression>().ToImmutableList() },
+            HashLiteral x => x with { Pairs = x.Pairs.Select(p => ((IExpression)p.Key.Transform(transformer), (IExpression)p.Value.Transform(transformer))).ToImmutableList() },
+            _ => transformer(node),
+        };
+    }
+}

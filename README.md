@@ -18,8 +18,14 @@ Run the tests
 dotnet test
 ```
 
+Run the intepreter
+
+```
+dotnet run --project src/Monkey.Interpreter <FILEPATH>
+```
+
 Run the repl
 
 ```
-dotnet run --project src/Monkey.Repl
+dotnet run --project src/Monkey.Interpreter
 ```

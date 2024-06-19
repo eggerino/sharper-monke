@@ -18,6 +18,7 @@ public enum ObjectType
     Builtin,
     Array,
     Hash,
+    Quote,
 }
 
 public interface IObject
@@ -122,4 +123,11 @@ public record Hash(ImmutableDictionary<IHashable, IObject> Pairs) : IObject
         builder.Append("}");
         return builder.ToString();
     }
+}
+
+public record Quote(INode? Node) : IObject
+{
+    public ObjectType GetObjectType() => ObjectType.Quote;
+
+    public string Inspect() => $"Quote({Node?.GetDebugString()})";
 }

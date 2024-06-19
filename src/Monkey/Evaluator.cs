@@ -49,6 +49,7 @@ public static class Evaluator
             IfExpression x => EvalIfExpression(x, environment),
             Identifier x => EvalIdentifier(x, environment),
             FunctionLiteral x => new Function(x.Parameters, x.Body, environment),
+            CallExpression x when x.Function.GetTokenLiteral() == "quote" => Quote(x.Arguments.FirstOrDefault(), environment),
             CallExpression x => Eval(x.Function, environment) switch
             {
                 Error e => e,
@@ -329,4 +330,27 @@ public static class Evaluator
             _ => obj,
         };
     }
+
+    private static Quote Quote(INode? node, Environment environment)
+    {
+        return new(node is null ? null : EvalUnquoteCalls(node, environment));
+    }
+
+    private static INode EvalUnquoteCalls(INode quoted, Environment environment)
+    {
+        return quoted.Transform(node => node switch
+        {
+            CallExpression x when x.Function.GetTokenLiteral() == "unquote" && x.Arguments.Count == 1 => ToNode(Eval(x.Arguments.First(), environment)),
+            _ => node,
+        });
+    }
+
+    private static INode ToNode(IObject obj) => obj switch
+    {
+        Integer x => new IntegerLiteral(new(TokenType.Integer, x.Value.ToString()), x.Value),
+        Object.Boolean x when x.Value => new Ast.Boolean(new(TokenType.True, "true"), true),
+        Object.Boolean x when !x.Value => new Ast.Boolean(new(TokenType.False, "false"), false),
+        Quote x when x.Node is not null => x.Node,
+        _ => new BlockStatement(new(TokenType.Illegal, ""), []),
+    };
 }
