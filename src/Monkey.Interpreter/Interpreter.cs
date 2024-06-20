@@ -18,7 +18,12 @@ public static class Interpreter
         else
         {
             var environment = new Environment();
-            Evaluator.Eval(program, environment);
+            var macroEnvironment = new Environment();
+
+            program = MacroExpansion.DefineMacros(program, macroEnvironment);
+            var expanded = MacroExpansion.ExpandMacros(program, macroEnvironment);
+
+            Evaluator.Eval(expanded, environment);
         }
     }
 }

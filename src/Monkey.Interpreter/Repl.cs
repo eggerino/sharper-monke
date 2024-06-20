@@ -11,6 +11,7 @@ public static class Repl
         outputWriter.WriteLine("Enter <CTRL + D> to exit");
 
         var environment = new Environment();
+        var macroEnvironment = new Environment();
         while (true)
         {
             outputWriter.Write(">> ");
@@ -32,7 +33,10 @@ public static class Repl
                 continue;
             }
 
-            var result = Evaluator.Eval(program, environment);
+            program = MacroExpansion.DefineMacros(program, macroEnvironment);
+            var expanded = MacroExpansion.ExpandMacros(program, macroEnvironment);
+
+            var result = Evaluator.Eval(expanded, environment);
             if (result is not null)
             {
                 outputWriter.WriteLine(result.Inspect());
