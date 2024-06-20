@@ -28,6 +28,7 @@ if (5 < 10) {
 ""foo bar""
 [1, 2];
 {""foo"": ""bar""}
+macro(x, y) { x + y; };
 ";
 
 		Token[] expected = [
@@ -117,6 +118,19 @@ if (5 < 10) {
 			new Token(TokenType.Colon, ":"),
 			new Token(TokenType.String, @"""bar"""),
 			new Token(TokenType.RightBrace, "}"),
+			new Token(TokenType.Macro, "macro"),
+			new Token(TokenType.LeftParenthese, "("),
+			new Token(TokenType.Identifier, "x"),
+			new Token(TokenType.Comma, ","),
+			new Token(TokenType.Identifier, "y"),
+			new Token(TokenType.RightParenthese, ")"),
+			new Token(TokenType.LeftBrace, "{"),
+			new Token(TokenType.Identifier, "x"),
+			new Token(TokenType.Plus, "+"),
+			new Token(TokenType.Identifier, "y"),
+			new Token(TokenType.Semicolon, ";"),
+			new Token(TokenType.RightBrace, "}"),
+			new Token(TokenType.Semicolon, ";"),
 			new Token(TokenType.EndOfFile, ""),
 		];
 

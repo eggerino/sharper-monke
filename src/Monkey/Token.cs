@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Monkey;
 
 public enum TokenType
@@ -46,6 +44,7 @@ public enum TokenType
     If,
     Else,
     Return,
+    Macro,
 }
 
 public record Token(TokenType Type, string Literal);
@@ -57,18 +56,16 @@ public static class StringToken
 
 public static class TokenTypeLookup
 {
-    private static readonly Dictionary<string, TokenType> _keywords = new()
+    public static TokenType Identifier(string identifier) => identifier switch
     {
-        {"fn", TokenType.Function},
-        {"let", TokenType.Let},
-        {"true", TokenType.True},
-        {"false", TokenType.False},
-        {"if", TokenType.If},
-        {"else", TokenType.Else},
-        {"return", TokenType.Return},
+        "fn" => TokenType.Function,
+        "let" => TokenType.Let,
+        "true" => TokenType.True,
+        "false" => TokenType.False,
+        "if" => TokenType.If,
+        "else" => TokenType.Else,
+        "return" => TokenType.Return,
+        "macro" => TokenType.Macro,
+        _ => TokenType.Identifier,
     };
-
-    public static TokenType Identifier(string identifier) => _keywords.TryGetValue(identifier, out var value)
-        ? value
-        : TokenType.Identifier;
 }

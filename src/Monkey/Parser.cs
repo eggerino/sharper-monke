@@ -74,6 +74,7 @@ public class Parser(Lexer lexer)
             _prefixParses.Add(TokenType.String, ParseStringLiteral);
             _prefixParses.Add(TokenType.LeftBracket, ParseArrayLiteral);
             _prefixParses.Add(TokenType.LeftBrace, ParseHashLiteral);
+            _prefixParses.Add(TokenType.Macro, ParseMacroLiteral);
 
             _infixParses.Add(TokenType.Plus, ParseInfixExpression);
             _infixParses.Add(TokenType.Minus, ParseInfixExpression);
@@ -459,6 +460,31 @@ public class Parser(Lexer lexer)
             }
 
             return new(token, pairs.ToImmutable());
+        }
+
+        private MacroLiteral? ParseMacroLiteral()
+        {
+            var token = _currentToken;
+
+            if (!ExpectPeek(TokenType.LeftParenthese))
+            {
+                return null;
+            }
+
+            var parameters = ParseFunctionParameters();
+            if (parameters is null)
+            {
+                return null;
+            }
+
+            if (!ExpectPeek(TokenType.LeftBrace))
+            {
+                return null;
+            }
+
+            var body = ParseBlockStatement();
+
+            return new(token, parameters, body);
         }
 
         private InfixExpression? ParseInfixExpression(IExpression left)

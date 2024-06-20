@@ -422,6 +422,27 @@ public class ParserTest
         TestInfixExpression(hash.Pairs[2].Value, 15, "/", 5);
     }
 
+    [Fact]
+    public void TestMacroLiteralParsing()
+    {
+        var input = "macro(x, y) { x + y; }";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+        var (program, errors) = parser.ParseProgram();
+
+        CheckParserErrors(errors);
+        var statement = Assert.Single(program.Statements);
+        var expressionStatement = Assert.IsType<ExpressionStatement>(statement);
+        var macro = Assert.IsType<MacroLiteral>(expressionStatement.Expression);
+        Assert.Equal(2, macro.Parameters.Count);
+        TestLiteralExpression(macro.Parameters[0], "x");
+        TestLiteralExpression(macro.Parameters[1], "y");
+        var stmt = Assert.Single(macro.Body.Statements);
+        var bodyStmt = Assert.IsType<ExpressionStatement>(stmt);
+        TestInfixExpression(bodyStmt.Expression!, "x", "+", "y");
+    }
+
     private static void CheckParserErrors(IReadOnlyList<string> errors)
     {
         if (errors.Count == 0)

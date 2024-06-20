@@ -238,6 +238,22 @@ public record HashLiteral(Token Token, ImmutableList<(IExpression Key, IExpressi
     }
 }
 
+public record MacroLiteral(Token Token, ImmutableList<Identifier> Parameters, BlockStatement Body) : IExpression
+{
+    public string GetTokenLiteral() => Token.Literal;
+
+    public string GetDebugString()
+    {
+        var builder = new StringBuilder();
+        builder.Append(GetTokenLiteral());
+        builder.Append("(");
+        builder.Append(string.Join(", ", Parameters.Select(x => x.GetDebugString())));
+        builder.Append(") ");
+        builder.Append(Body.GetDebugString());
+        return builder.ToString();
+    }
+}
+
 public delegate INode Transformer(INode node);
 
 public static class INodeExtensions
