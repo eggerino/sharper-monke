@@ -19,6 +19,7 @@ public enum ObjectType
     Array,
     Hash,
     Quote,
+    Macro,
 }
 
 public interface IObject
@@ -130,4 +131,20 @@ public record Quote(INode? Node) : IObject
     public ObjectType GetObjectType() => ObjectType.Quote;
 
     public string Inspect() => $"Quote({Node?.GetDebugString()})";
+}
+
+public record Macro(ImmutableList<Identifier> Parameters, BlockStatement Body, Environment Environment) : IObject
+{
+    public ObjectType GetObjectType() => ObjectType.Macro;
+
+    public string Inspect()
+    {
+        var builder = new StringBuilder();
+        builder.Append("macro(");
+        builder.Append(string.Join(", ", Parameters.Select(x => x.GetDebugString())));
+        builder.Append(") {\n");
+        builder.Append(Body.GetDebugString());
+        builder.Append("}");
+        return builder.ToString();
+    }
 }

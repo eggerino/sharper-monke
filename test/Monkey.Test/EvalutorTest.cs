@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Monkey.Ast;
 using Monkey.Object;
 
 namespace Monkey.Test;
@@ -309,8 +310,8 @@ addTwo(2);";
             {new String("two"), 2},
             {new String("three"), 3},
             {new Integer(4), 4},
-            {new Boolean(true), 5},
-            {new Boolean(false), 6},
+            {new Object.Boolean(true), 5},
+            {new Object.Boolean(false), 6},
         };
 
         var evaluated = TestEval(input);
@@ -360,7 +361,6 @@ addTwo(2);";
     [InlineData("quote(unquote(true == false))", "false")]
     [InlineData("quote(unquote(quote(4 + 4)))", "(4 + 4)")]
     [InlineData("let quotedInfixExpression = quote(4 + 4); quote(unquote(4 + 4) + unquote(quotedInfixExpression))", "(8 + (4 + 4))")]
-
     public void TestQuoteUnquote(string input, string expected)
     {
         var evaluated = TestEval(input);
@@ -370,15 +370,72 @@ addTwo(2);";
         Assert.Equal(expected, quote.Node.GetDebugString());
     }
 
-    private static IObject TestEval(string input)
+    [Fact]
+    public void TestDefineMacros()
+    {
+        var input = "let number = 1; let function = fn(x, y) { x + y }; let mymacro = macro(x, y) { x + y; };";
+
+        var program = TestParseProgram(input);
+        var env = new Environment();
+
+        program = MacroExpansion.DefineMacros(program, env);
+
+        Assert.Equal(2, program.Statements.Count);
+        Assert.Null(env.Get("number"));
+        Assert.Null(env.Get("function"));
+        var mymacro = env.Get("mymacro");
+        var macro = Assert.IsType<Macro>(mymacro);
+        Assert.Equal(2, macro.Parameters.Count);
+        Assert.Equal("x", macro.Parameters[0].GetDebugString());
+        Assert.Equal("y", macro.Parameters[1].GetDebugString());
+        Assert.Equal("(x + y)", macro.Body.GetDebugString());
+    }
+
+    [Theory]
+    [InlineData(@"
+            let infixExpression = macro() { quote(1 + 2); };
+            infixExpression();
+            ", "(1 + 2)")]
+    [InlineData(@"
+            let reverse = macro(a, b) { quote(unquote(b) - unquote(a)); };
+            reverse(2 + 2, 10 - 5);
+            ", "(10 - 5) - (2 + 2)")]
+    [InlineData(@"
+            let unless = macro(condition, consequence, alternative) {
+                quote(if (!(unquote(condition))) {
+                    unquote(consequence);
+                } else {
+                    unquote(alternative);
+                });
+            };
+
+            unless(10 > 5, puts(""not greater""), puts(""greater""));
+            ",
+            @"if (!(10 > 5)) { puts(""not greater"") } else { puts(""greater"") }")]
+    public void TestExpandMacros(string input, string expected)
+    {
+        var program = TestParseProgram(input);
+        var expectedProgram = TestParseProgram(expected);
+
+        var env = new Environment();
+        program = MacroExpansion.DefineMacros(program, env);
+        var expanded = MacroExpansion.ExpandMacros(program, env);
+        Assert.Equal(expectedProgram.GetDebugString(), expanded.GetDebugString());
+    }
+
+    private static Program TestParseProgram(string input)
     {
         var lexer = new Lexer(input);
         var parser = new Parser(lexer);
         var (program, errors) = parser.ParseProgram();
 
         Assert.Empty(errors);
+        return program;
+    }
 
-        return Evaluator.Eval(program, new());
+    private static IObject TestEval(string input)
+    {
+        return Evaluator.Eval(TestParseProgram(input), new());
     }
 
     private static void TestIntegerObject(IObject obj, long expected)
@@ -389,7 +446,7 @@ addTwo(2);";
 
     private static void TestBooleanObject(IObject obj, bool expected)
     {
-        var result = Assert.IsType<Boolean>(obj);
+        var result = Assert.IsType<Object.Boolean>(obj);
         Assert.Equal(expected, result.Value);
     }
 
