@@ -32,9 +32,12 @@ public class CompilerTest
         foreach (var test in tests)
         {
             var program = Parse(test.Input);
-            var compiler = new Compiler(program);
+            var compiler = new Compiler();
+            
+            var error = compiler.Compile(program);
+            Assert.Null(error);
 
-            var bytecode = compiler.Compile();
+            var bytecode = compiler.GetByteCode();
 
             Assert.NotNull(bytecode);
             TestInstructions(test.ExpectedInstructions, bytecode.Instructions);
@@ -64,9 +67,9 @@ public class CompilerTest
 
         foreach (var (exp, act) in expected.Zip(actual))
         {
-            if (exp is int)
+            if (exp is int expInt)
             {
-                TestIntegerObject((long)exp, act);
+                TestIntegerObject(expInt, act);
             }
             else
             {
