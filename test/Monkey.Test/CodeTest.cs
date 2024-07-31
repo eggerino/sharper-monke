@@ -12,11 +12,13 @@ public class CodeTest
         var tests = new[]
         {
             (Opcode.Constant, new[] {65534}, new[]{Opcode.Constant.AsByte(), (byte)255, (byte)254}),
+            (Opcode.Pop, new int[]{}, new[]{Opcode.Pop.AsByte()}),
             (Opcode.Add, new int[]{}, new[]{Opcode.Add.AsByte()}),
             (Opcode.Sub, new int[]{}, new[]{Opcode.Sub.AsByte()}),
             (Opcode.Mul, new int[]{}, new[]{Opcode.Mul.AsByte()}),
             (Opcode.Div, new int[]{}, new[]{Opcode.Div.AsByte()}),
-            (Opcode.Pop, new int[]{}, new[]{Opcode.Pop.AsByte()}),
+            (Opcode.True, new int[]{}, new[]{Opcode.True.AsByte()}),
+            (Opcode.False, new int[]{}, new[]{Opcode.False.AsByte()}),
         };
 
         foreach (var (op, operands, expected) in tests)
@@ -34,21 +36,25 @@ public class CodeTest
         {
             Instruction.Make(Opcode.Constant, 2),
             Instruction.Make(Opcode.Constant, 65535),
+            Instruction.Make(Opcode.Pop),
             Instruction.Make(Opcode.Add),
             Instruction.Make(Opcode.Sub),
             Instruction.Make(Opcode.Mul),
             Instruction.Make(Opcode.Div),
-            Instruction.Make(Opcode.Pop),
+            Instruction.Make(Opcode.True),
+            Instruction.Make(Opcode.False),
         };
         var concatted = instructions.SelectMany(x => x).ToArray();
 
         var expected = @"0000 OpConstant 2
 0003 OpConstant 65535
-0006 OpAdd
-0007 OpSub
-0008 OpMul
-0009 OpDiv
-0010 OpPop
+0006 OpPop
+0007 OpAdd
+0008 OpSub
+0009 OpMul
+0010 OpDiv
+0011 OpTrue
+0012 OpFalse
 ";
 
         var actual = concatted.AsSegment().Disassemble();

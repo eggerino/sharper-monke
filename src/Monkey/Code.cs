@@ -8,11 +8,15 @@ namespace Monkey.Code;
 public enum Opcode : byte
 {
     Constant,
+    Pop,
+
     Add,
     Sub,
     Mul,
     Div,
-    Pop,
+
+    True,
+    False
 }
 
 public static class OpcodeExtensions
@@ -27,11 +31,13 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
     private static readonly Dictionary<Opcode, Definition> _lookUp = new()
     {
         {Opcode.Constant, new("OpConstant", [2])},
+        {Opcode.Pop, new("OpPop", [])},
         {Opcode.Add, new("OpAdd", [])},
         {Opcode.Sub, new("OpSub", [])},
         {Opcode.Mul, new("OpMul", [])},
         {Opcode.Div, new("OpDiv", [])},
-        {Opcode.Pop, new("OpPop", [])},
+        {Opcode.True, new("OpTrue", [])},
+        {Opcode.False, new("OpFalse", [])},
     };
 
     public static Definition? Of(Opcode op) => _lookUp.TryGetValue(op, out var def) switch

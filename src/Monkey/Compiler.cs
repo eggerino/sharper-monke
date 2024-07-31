@@ -20,6 +20,7 @@ public class Compiler
         ExpressionStatement exprStmt => CompileExpressionStatement(exprStmt),
         InfixExpression expr => CompileInfixExpression(expr),
         IntegerLiteral literal => CompileIntegerLiteral(literal),
+        Ast.Boolean boolean => CompileBoolean(boolean),
         _ => null,
     };
 
@@ -93,6 +94,17 @@ public class Compiler
     {
         var integer = new Integer(integerLiteral.Value);
         Emit(Opcode.Constant, AddConstant(integer));
+        return null;
+    }
+
+    private string? CompileBoolean(Ast.Boolean boolean)
+    {
+        var op = boolean.Value switch
+        {
+            true => Opcode.True,
+            false => Opcode.False,
+        };
+        Emit(op);
         return null;
     }
 

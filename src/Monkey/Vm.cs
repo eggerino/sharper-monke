@@ -10,6 +10,9 @@ public class Vm
 {
     private const int StackSize = 2048;
 
+    private static readonly Object.Boolean _true = new Object.Boolean(true);
+    private static readonly Object.Boolean _false = new Object.Boolean(false);
+
     private readonly ArraySegment<byte> _instructions;
     private readonly IReadOnlyList<IObject> _constants;
 
@@ -53,6 +56,10 @@ public class Vm
                     }
                     break;
 
+                case Opcode.Pop:
+                    Pop();
+                    break;
+
                 case Opcode.Add:
                 case Opcode.Sub:
                 case Opcode.Mul:
@@ -64,8 +71,20 @@ public class Vm
                     }
                     break;
 
-                case Opcode.Pop:
-                    Pop();
+                case Opcode.True:
+                    error = Push(_true);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
+
+                case Opcode.False:
+                    error = Push(_false);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
                     break;
             }
         }

@@ -27,6 +27,14 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    [Theory]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    public void TestBooleanExpressions(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
         foreach (var test in tests)
@@ -61,6 +69,7 @@ public class VmTest
         Action<IObject> testAction = expected switch
         {
             int x => a => TestIntegerObject(x, a),
+            bool x => a => TestBooleanObject(x, a),
             _ => _ => Assert.Fail($"Unhandled test case for expected type {expected.GetType()}"),
         };
 
@@ -71,5 +80,11 @@ public class VmTest
     {
         var actualInt = Assert.IsType<Integer>(actual);
         Assert.Equal(expected, actualInt.Value);
+    }
+
+    private static void TestBooleanObject(bool expected, IObject actual)
+    {
+        var actualBoolean = Assert.IsType<Object.Boolean>(actual);
+        Assert.Equal(expected, actualBoolean.Value);
     }
 }

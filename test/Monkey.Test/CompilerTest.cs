@@ -61,6 +61,25 @@ public class CompilerTest
         ]);
     }
 
+    [Fact]
+    public void TestBooleanExpressions()
+    {
+        RunCompilerTests([
+            new(Input: "true",
+                ExpectedConstants: [],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.True),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "false",
+                ExpectedConstants: [],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.False),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
     private static void RunCompilerTests(IEnumerable<CompilerTestCase> tests)
     {
         foreach (var test in tests)
