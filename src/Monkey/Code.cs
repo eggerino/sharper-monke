@@ -16,7 +16,11 @@ public enum Opcode : byte
     Div,
 
     True,
-    False
+    False,
+
+    Equal,
+    NotEqual,
+    GreaterThan,
 }
 
 public static class OpcodeExtensions
@@ -38,6 +42,9 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         {Opcode.Div, new("OpDiv", [])},
         {Opcode.True, new("OpTrue", [])},
         {Opcode.False, new("OpFalse", [])},
+        {Opcode.Equal, new("OpEqual", [])},
+        {Opcode.NotEqual, new("OpNotEqual", [])},
+        {Opcode.GreaterThan, new("OpGreaterThan", [])},
     };
 
     public static Definition? Of(Opcode op) => _lookUp.TryGetValue(op, out var def) switch

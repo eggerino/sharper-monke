@@ -86,6 +86,16 @@ public class Vm
                         return error;
                     }
                     break;
+
+                case Opcode.Equal:
+                case Opcode.NotEqual:
+                case Opcode.GreaterThan:
+                    error = ExecuteComparison(op);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
             }
         }
 
@@ -132,6 +142,39 @@ public class Vm
 
         return Push(new Integer(result));
     }
+
+    private string? ExecuteComparison(Opcode op)
+    {
+        var right = Pop();
+        var left = Pop();
+
+
+        if (left is Integer leftValue && right is Integer rightValue)
+        {
+            return ExecuteIntegerComparison(op, leftValue, rightValue);
+        }
+
+        return op switch
+        {
+            Opcode.Equal => Push(NativeBoolToBooleanObject(left == right)),
+            Opcode.NotEqual => Push(NativeBoolToBooleanObject(left != right)),
+            _ => $"ERROR: unknown operator: {op} ({left.GetType()} {right.GetType()})",
+        };
+    }
+
+    private string? ExecuteIntegerComparison(Opcode op, Integer left, Integer right) => op switch
+    {
+        Opcode.Equal => Push(NativeBoolToBooleanObject(left.Value == right.Value)),
+        Opcode.NotEqual => Push(NativeBoolToBooleanObject(left.Value != right.Value)),
+        Opcode.GreaterThan => Push(NativeBoolToBooleanObject(left.Value > right.Value)),
+        _ => $"ERROR: unknown operator: {op}",
+    };
+
+    private static Object.Boolean NativeBoolToBooleanObject(bool value) => value switch
+    {
+        true => _true,
+        false => _false,
+    };
 
     private string? Push(IObject value)
     {

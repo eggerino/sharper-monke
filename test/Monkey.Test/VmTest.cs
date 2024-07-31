@@ -30,6 +30,23 @@ public class VmTest
     [Theory]
     [InlineData("true", true)]
     [InlineData("false", false)]
+    [InlineData("1 < 2", true)]
+    [InlineData("1 > 2", false)]
+    [InlineData("1 < 1", false)]
+    [InlineData("1 > 1", false)]
+    [InlineData("1 == 1", true)]
+    [InlineData("1 != 1", false)]
+    [InlineData("1 == 2", false)]
+    [InlineData("1 != 2", true)]
+    [InlineData("true == true", true)]
+    [InlineData("false == false", true)]
+    [InlineData("true == false", false)]
+    [InlineData("true != false", true)]
+    [InlineData("false != true", true)]
+    [InlineData("(1 < 2) == true", true)]
+    [InlineData("(1 < 2) == false", false)]
+    [InlineData("(1 > 2) == true", false)]
+    [InlineData("(1 > 2) == false", true)]
     public void TestBooleanExpressions(string input, object expected)
     {
         RunVmTests([new(input, expected)]);

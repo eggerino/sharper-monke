@@ -55,13 +55,19 @@ public class Compiler
 
     private string? CompileInfixExpression(InfixExpression infixExpression)
     {
-        var error = Compile(infixExpression.Left);
+        var (left, right) = infixExpression.Operator switch
+        {
+            "<" => (infixExpression.Right, infixExpression.Left),   // For less than -> switch order of branches and use greater than opcode 
+            _ => (infixExpression.Left, infixExpression.Right),
+        };
+
+        var error = Compile(left);
         if (error is not null)
         {
             return error;
         }
 
-        error = Compile(infixExpression.Right);
+        error = Compile(right);
         if (error is not null)
         {
             return error;
@@ -83,6 +89,19 @@ public class Compiler
 
             case "/":
                 Emit(Opcode.Div);
+                return null;
+
+            case "==":
+                Emit(Opcode.Equal);
+                return null;
+
+            case "!=":
+                Emit(Opcode.NotEqual);
+                return null;
+
+            case ">":
+            case "<":                       // Uses same op code but different but changed order of operands to be semantically correct
+                Emit(Opcode.GreaterThan);
                 return null;
 
             default:
