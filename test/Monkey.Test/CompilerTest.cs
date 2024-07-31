@@ -150,11 +150,13 @@ public class CompilerTest
                 ExpectedConstants: [10, 3333],
                 ExpectedInstructions:[
                     Instruction.Make(Opcode.True),                  // 0000
-                    Instruction.Make(Opcode.JumpNotTruthy, 7),      // 0001
+                    Instruction.Make(Opcode.JumpNotTruthy, 10),     // 0001
                     Instruction.Make(Opcode.Constant, 0),           // 0004
-                    Instruction.Make(Opcode.Pop),                   // 0007
-                    Instruction.Make(Opcode.Constant, 1),           // 0008
+                    Instruction.Make(Opcode.Jump, 11),              // 0007
+                    Instruction.Make(Opcode.Null),                  // 0010
                     Instruction.Make(Opcode.Pop),                   // 0011
+                    Instruction.Make(Opcode.Constant, 1),           // 0012
+                    Instruction.Make(Opcode.Pop),                   // 0015
                 ]),
             new(Input: "if (true) { 10 } else { 20 }; 3333;",
                 ExpectedConstants: [10, 20, 3333],
@@ -169,7 +171,7 @@ public class CompilerTest
                     Instruction.Make(Opcode.Pop),                   // 0017
                 ]),
         ]);
-    }  
+    }
 
     private static void RunCompilerTests(IEnumerable<CompilerTestCase> tests)
     {
@@ -177,7 +179,7 @@ public class CompilerTest
         {
             var program = Parse(test.Input);
             var compiler = new Compiler();
-            
+
             var error = compiler.Compile(program);
             Assert.Null(error);
 

@@ -26,6 +26,7 @@ public class CodeTest
             (Opcode.Bang, new int[] {}, new[] {Opcode.Bang.AsByte()}),
             (Opcode.JumpNotTruthy, new int[] {65534}, new[] {Opcode.JumpNotTruthy.AsByte(), (byte)255, (byte)254}),
             (Opcode.Jump, new int[] {65534}, new[] {Opcode.Jump.AsByte(), (byte)255, (byte)254}),
+            (Opcode.Null, new int[] {}, new[] {Opcode.Null.AsByte()}),
         };
 
         foreach (var (op, operands, expected) in tests)
@@ -59,6 +60,7 @@ public class CodeTest
             Instruction.Make(Opcode.JumpNotTruthy, 65535),
             Instruction.Make(Opcode.Jump, 2),
             Instruction.Make(Opcode.Jump, 65535),
+            Instruction.Make(Opcode.Null),
         };
         var concatted = instructions.SelectMany(x => x).ToArray();
 
@@ -80,6 +82,7 @@ public class CodeTest
 0021 OpJumpNotTruthy 65535
 0024 OpJump 2
 0027 OpJump 65535
+0030 OpNull
 ";
 
         var actual = concatted.AsSegment().Disassemble();

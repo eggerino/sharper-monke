@@ -12,6 +12,7 @@ public class Vm
 
     private static readonly Object.Boolean _true = new Object.Boolean(true);
     private static readonly Object.Boolean _false = new Object.Boolean(false);
+    private static readonly Null _null = new Null();
 
     private readonly ArraySegment<byte> _instructions;
     private readonly IReadOnlyList<IObject> _constants;
@@ -129,6 +130,14 @@ public class Vm
                     pos = Instruction.ReadUint16(_instructions.Slice(ip + 1));
                     ip = pos - 1;   // end of iteration will increment ip again
                     break;
+
+                case Opcode.Null:
+                    error = Push(_null);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
             }
         }
 
@@ -229,6 +238,7 @@ public class Vm
         {
             Object.Boolean x when x == _true => Push(_false),
             Object.Boolean x when x == _false => Push(_true),
+            Null => Push(_true),
             _ => Push(_false),
         };
     }
@@ -236,6 +246,7 @@ public class Vm
     private static bool IsTruthy(IObject value) => value switch
     {
         Object.Boolean x => x.Value,
+        Null => false,
         _ => true,
     };
 

@@ -7,7 +7,7 @@ namespace Monkey.Test;
 
 public class VmTest
 {
-    record VmTestCase(string Input, object Expected);
+    record VmTestCase(string Input, object? Expected);
 
     [Theory]
     [InlineData("1", 1)]
@@ -57,6 +57,7 @@ public class VmTest
     [InlineData("!!true", true)]
     [InlineData("!!false", false)]
     [InlineData("!!5", true)]
+    [InlineData("!(if (false) { 5; })", true)]
     public void TestBooleanExpressions(string input, object expected)
     {
         RunVmTests([new(input, expected)]);
@@ -70,7 +71,10 @@ public class VmTest
     [InlineData("if (1 < 2) { 10 }", 10)]
     [InlineData("if (1 < 2) { 10 } else { 20 }", 10)]
     [InlineData("if (1 > 2) { 10 } else { 20 }", 20)]
-    public void TestConditionals(string input, object expected)
+    [InlineData("if (1 > 2) { 10 }", null)]
+    [InlineData("if (false) { 10 }", null)]
+    [InlineData("if ((if (false) { 10 })) { 10 } else { 20 }", 20)]
+    public void TestConditionals(string input, object? expected)
     {
         RunVmTests([new(input, expected)]);
     }
@@ -104,10 +108,11 @@ public class VmTest
         return program;
     }
 
-    private static void TestExpectedObject(object expected, IObject actual)
+    private static void TestExpectedObject(object? expected, IObject actual)
     {
         Action<IObject> testAction = expected switch
         {
+            null => a => Assert.IsType<Null>(a),
             int x => a => TestIntegerObject(x, a),
             bool x => a => TestBooleanObject(x, a),
             _ => _ => Assert.Fail($"Unhandled test case for expected type {expected.GetType()}"),

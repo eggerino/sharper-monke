@@ -182,7 +182,7 @@ public class Compiler
         }
 
         // Bogus offset since it cannot be known before compiling the consequence
-        var jumpNotTruthyPosition = Emit(Opcode.JumpNotTruthy, 0);
+        var jumpNotTruthyPosition = Emit(Opcode.JumpNotTruthy, 9999);
 
         error = Compile(expr.Consequence);
         if (error is not null)
@@ -195,19 +195,19 @@ public class Compiler
             RemoveLastPop();
         }
 
+        // Bogus offset since it cannot be known before compiling the alternative
+        var jumpPosition = Emit(Opcode.Jump, 9999);
+
+        // Patch the offset of the jump not truthy instruction
+        var afterConsequencePosition = _instructions.Count;
+        ChangeOperands(jumpNotTruthyPosition, afterConsequencePosition);
+
         if (expr.Alternative is null)
         {
-            var afterConsequencePosition = _instructions.Count;
-            ChangeOperands(jumpNotTruthyPosition, afterConsequencePosition);
+            Emit(Opcode.Null);
         }
         else
         {
-            // Bogus offset since it cannot be known ahead of time
-            var jumpPosition = Emit(Opcode.Jump, 0);
-
-            var afterConsequencePosition = _instructions.Count;
-            ChangeOperands(jumpNotTruthyPosition, afterConsequencePosition);
-
             error = Compile(expr.Alternative);
             if (error is not null)
             {
@@ -218,10 +218,11 @@ public class Compiler
             {
                 RemoveLastPop();
             }
-
-            var afterAlternativePosition = _instructions.Count;
-            ChangeOperands(jumpPosition, afterAlternativePosition);
         }
+
+        // Patch the offset of the jump instruction
+        var afterAlternativePosition = _instructions.Count;
+        ChangeOperands(jumpPosition, afterAlternativePosition);
 
         return null;
     }
