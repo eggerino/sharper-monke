@@ -11,19 +11,21 @@ public class CodeTest
     {
         var tests = new[]
         {
-            (Opcode.Constant, new[] {65534}, new[]{Opcode.Constant.AsByte(), (byte)255, (byte)254}),
-            (Opcode.Pop, new int[]{}, new[]{Opcode.Pop.AsByte()}),
-            (Opcode.Add, new int[]{}, new[]{Opcode.Add.AsByte()}),
-            (Opcode.Sub, new int[]{}, new[]{Opcode.Sub.AsByte()}),
-            (Opcode.Mul, new int[]{}, new[]{Opcode.Mul.AsByte()}),
-            (Opcode.Div, new int[]{}, new[]{Opcode.Div.AsByte()}),
-            (Opcode.True, new int[]{}, new[]{Opcode.True.AsByte()}),
-            (Opcode.False, new int[]{}, new[]{Opcode.False.AsByte()}),
-            (Opcode.Equal, new int[]{}, new[]{Opcode.Equal.AsByte()}),
-            (Opcode.NotEqual, new int[]{}, new[]{Opcode.NotEqual.AsByte()}),
-            (Opcode.GreaterThan, new int[]{}, new[]{Opcode.GreaterThan.AsByte()}),
-            (Opcode.Minus, new int[]{}, new[]{Opcode.Minus.AsByte()}),
-            (Opcode.Bang, new int[]{}, new[]{Opcode.Bang.AsByte()}),
+            (Opcode.Constant, new[] {65534}, new[] {Opcode.Constant.AsByte(), (byte)255, (byte)254}),
+            (Opcode.Pop, new int[] {}, new[] {Opcode.Pop.AsByte()}),
+            (Opcode.Add, new int[] {}, new[] {Opcode.Add.AsByte()}),
+            (Opcode.Sub, new int[] {}, new[] {Opcode.Sub.AsByte()}),
+            (Opcode.Mul, new int[] {}, new[] {Opcode.Mul.AsByte()}),
+            (Opcode.Div, new int[] {}, new[] {Opcode.Div.AsByte()}),
+            (Opcode.True, new int[] {}, new[] {Opcode.True.AsByte()}),
+            (Opcode.False, new int[] {}, new[] {Opcode.False.AsByte()}),
+            (Opcode.Equal, new int[] {}, new[] {Opcode.Equal.AsByte()}),
+            (Opcode.NotEqual, new int[] {}, new[] {Opcode.NotEqual.AsByte()}),
+            (Opcode.GreaterThan, new int[] {}, new[] {Opcode.GreaterThan.AsByte()}),
+            (Opcode.Minus, new int[] {}, new[] {Opcode.Minus.AsByte()}),
+            (Opcode.Bang, new int[] {}, new[] {Opcode.Bang.AsByte()}),
+            (Opcode.JumpNotTruthy, new int[] {65534}, new[] {Opcode.JumpNotTruthy.AsByte(), (byte)255, (byte)254}),
+            (Opcode.Jump, new int[] {65534}, new[] {Opcode.Jump.AsByte(), (byte)255, (byte)254}),
         };
 
         foreach (var (op, operands, expected) in tests)
@@ -53,6 +55,10 @@ public class CodeTest
             Instruction.Make(Opcode.GreaterThan),
             Instruction.Make(Opcode.Minus),
             Instruction.Make(Opcode.Bang),
+            Instruction.Make(Opcode.JumpNotTruthy, 2),
+            Instruction.Make(Opcode.JumpNotTruthy, 65535),
+            Instruction.Make(Opcode.Jump, 2),
+            Instruction.Make(Opcode.Jump, 65535),
         };
         var concatted = instructions.SelectMany(x => x).ToArray();
 
@@ -70,6 +76,10 @@ public class CodeTest
 0015 OpGreaterThan
 0016 OpMinus
 0017 OpBang
+0018 OpJumpNotTruthy 2
+0021 OpJumpNotTruthy 65535
+0024 OpJump 2
+0027 OpJump 65535
 ";
 
         var actual = concatted.AsSegment().Disassemble();

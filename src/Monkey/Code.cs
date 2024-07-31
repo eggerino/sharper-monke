@@ -24,6 +24,9 @@ public enum Opcode : byte
 
     Minus,
     Bang,
+
+    JumpNotTruthy,
+    Jump,
 }
 
 public static class OpcodeExtensions
@@ -50,6 +53,8 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         {Opcode.GreaterThan, new("OpGreaterThan", [])},
         {Opcode.Minus, new("OpMinus", [])},
         {Opcode.Bang, new("OpBang", [])},
+        {Opcode.JumpNotTruthy, new("OpJumpNotTruthy", [2])},
+        {Opcode.Jump, new("OpJump", [2])},
     };
 
     public static Definition? Of(Opcode op) => _lookUp.TryGetValue(op, out var def) switch

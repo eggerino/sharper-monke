@@ -43,6 +43,7 @@ public class Vm
             var op = _instructions[ip].AsOpcode();
 
             string? error;
+            int pos;
             switch (op)
             {
                 case Opcode.Constant:
@@ -111,6 +112,22 @@ public class Vm
                     {
                         return error;
                     }
+                    break;
+
+                case Opcode.JumpNotTruthy:
+                    pos = Instruction.ReadUint16(_instructions.Slice(ip + 1));
+                    ip += 2;    // Skip the operands no matter the condition
+                    var condition = Pop();
+
+                    if (!IsTruthy(condition))
+                    {
+                        ip = pos - 1;
+                    }
+                    break;
+
+                case Opcode.Jump:
+                    pos = Instruction.ReadUint16(_instructions.Slice(ip + 1));
+                    ip = pos - 1;   // end of iteration will increment ip again
                     break;
             }
         }
@@ -215,6 +232,12 @@ public class Vm
             _ => Push(_false),
         };
     }
+
+    private static bool IsTruthy(IObject value) => value switch
+    {
+        Object.Boolean x => x.Value,
+        _ => true,
+    };
 
     private string? Push(IObject value)
     {

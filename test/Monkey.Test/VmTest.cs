@@ -62,6 +62,19 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    [Theory]
+    [InlineData("if (true) { 10 }", 10)]
+    [InlineData("if (true) { 10 } else { 20 }", 10)]
+    [InlineData("if (false) { 10 } else { 20 } ", 20)]
+    [InlineData("if (1) { 10 }", 10)]
+    [InlineData("if (1 < 2) { 10 }", 10)]
+    [InlineData("if (1 < 2) { 10 } else { 20 }", 10)]
+    [InlineData("if (1 > 2) { 10 } else { 20 }", 20)]
+    public void TestConditionals(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
         foreach (var test in tests)
