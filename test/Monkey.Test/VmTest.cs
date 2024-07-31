@@ -13,6 +13,15 @@ public class VmTest
     [InlineData("1", 1)]
     [InlineData("2", 2)]
     [InlineData("1 + 2", 3)]
+    [InlineData("1 - 2", -1)]
+    [InlineData("1 * 2", 2)]
+    [InlineData("4 / 2", 2)]
+    [InlineData("50 / 2 * 2 + 10 - 5", 55)]
+    [InlineData("5 + 5 + 5 + 5 - 10", 10)]
+    [InlineData("2 * 2 * 2 * 2 * 2", 32)]
+    [InlineData("5 * 2 + 10", 20)]
+    [InlineData("5 + 2 * 10", 25)]
+    [InlineData("5 * (2 + 10)", 60)]
     public void TestIntegerArithmetic(string input, object expected)
     {
         RunVmTests([new(input, expected)]);

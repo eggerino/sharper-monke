@@ -13,6 +13,9 @@ public class CodeTest
         {
             (Opcode.Constant, new[] {65534}, new[]{Opcode.Constant.AsByte(), (byte)255, (byte)254}),
             (Opcode.Add, new int[]{}, new[]{Opcode.Add.AsByte()}),
+            (Opcode.Sub, new int[]{}, new[]{Opcode.Sub.AsByte()}),
+            (Opcode.Mul, new int[]{}, new[]{Opcode.Mul.AsByte()}),
+            (Opcode.Div, new int[]{}, new[]{Opcode.Div.AsByte()}),
             (Opcode.Pop, new int[]{}, new[]{Opcode.Pop.AsByte()}),
         };
 
@@ -29,17 +32,23 @@ public class CodeTest
     {
         var instructions = new[]
         {
-            Instruction.Make(Opcode.Add),
             Instruction.Make(Opcode.Constant, 2),
             Instruction.Make(Opcode.Constant, 65535),
+            Instruction.Make(Opcode.Add),
+            Instruction.Make(Opcode.Sub),
+            Instruction.Make(Opcode.Mul),
+            Instruction.Make(Opcode.Div),
             Instruction.Make(Opcode.Pop),
         };
         var concatted = instructions.SelectMany(x => x).ToArray();
 
-        var expected = @"0000 OpAdd
-0001 OpConstant 2
-0004 OpConstant 65535
-0007 OpPop
+        var expected = @"0000 OpConstant 2
+0003 OpConstant 65535
+0006 OpAdd
+0007 OpSub
+0008 OpMul
+0009 OpDiv
+0010 OpPop
 ";
 
         var actual = concatted.AsSegment().Disassemble();

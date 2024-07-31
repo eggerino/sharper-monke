@@ -54,13 +54,14 @@ public class Vm
                     break;
 
                 case Opcode.Add:
-                    var right = Pop();
-                    var left = Pop();
-                    var leftValue = ((Integer)left).Value;
-                    var rightValue = ((Integer)right).Value;
-
-                    var result = leftValue + rightValue;
-                    Push(new Integer(result));
+                case Opcode.Sub:
+                case Opcode.Mul:
+                case Opcode.Div:
+                    error = ExecuteBinaryOperation(op);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
                     break;
 
                 case Opcode.Pop:
@@ -70,6 +71,47 @@ public class Vm
         }
 
         return null;
+    }
+
+    private string? ExecuteBinaryOperation(Opcode op)
+    {
+        var right = Pop();
+        var left = Pop();
+
+        if (left is Integer leftValue && right is Integer rightValue)
+        {
+            return ExecuteBinaryIntegerOperation(op, leftValue, rightValue);
+        }
+
+        return $"ERROR: Unsupported types for binary operation: {left.GetType()} {right.GetType()}";
+    }
+
+    private string? ExecuteBinaryIntegerOperation(Opcode op, Integer left, Integer right)
+    {
+        long result = 0;
+        switch (op)
+        {
+            case Opcode.Add:
+                result = left.Value + right.Value;
+                break;
+
+            case Opcode.Sub:
+                result = left.Value - right.Value;
+                break;
+
+            case Opcode.Mul:
+                result = left.Value * right.Value;
+                break;
+
+            case Opcode.Div:
+                result = left.Value / right.Value;
+                break;
+
+            default:
+                return $"ERROR: unknown integer operator: {op}";
+        }
+
+        return Push(new Integer(result));
     }
 
     private string? Push(IObject value)

@@ -72,6 +72,18 @@ public class Compiler
                 Emit(Opcode.Add);
                 return null;
 
+            case "-":
+                Emit(Opcode.Sub);
+                return null;
+
+            case "*":
+                Emit(Opcode.Mul);
+                return null;
+
+            case "/":
+                Emit(Opcode.Div);
+                return null;
+
             default:
                 return $"ERROR: unknown operator {infixExpression.Operator}";
         }

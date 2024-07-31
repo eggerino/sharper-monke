@@ -9,6 +9,9 @@ public enum Opcode : byte
 {
     Constant,
     Add,
+    Sub,
+    Mul,
+    Div,
     Pop,
 }
 
@@ -25,6 +28,9 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
     {
         {Opcode.Constant, new("OpConstant", [2])},
         {Opcode.Add, new("OpAdd", [])},
+        {Opcode.Sub, new("OpSub", [])},
+        {Opcode.Mul, new("OpMul", [])},
+        {Opcode.Div, new("OpDiv", [])},
         {Opcode.Pop, new("OpPop", [])},
     };
 

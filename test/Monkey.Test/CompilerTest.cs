@@ -34,6 +34,30 @@ public class CompilerTest
                     Instruction.Make(Opcode.Constant, 1),
                     Instruction.Make(Opcode.Pop),
                 ]),
+            new(Input: "1 - 2",
+                ExpectedConstants: [1, 2],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Sub),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "1 * 2",
+                ExpectedConstants: [1, 2],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Mul),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "2 / 1",
+                ExpectedConstants: [2, 1],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Div),
+                    Instruction.Make(Opcode.Pop),
+                ]),
         ]);
     }
 
