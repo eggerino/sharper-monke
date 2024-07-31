@@ -73,7 +73,7 @@ public static class Repl
             return;
         }
 
-        var stackTop = machine.GetStackTop();
-        outputWriter.WriteLine(stackTop?.Inspect());
+        var lastStackTop = machine.GetLastPoppedStackElement();
+        outputWriter.WriteLine(lastStackTop?.Inspect());
     }
 }

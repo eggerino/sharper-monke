@@ -31,6 +31,8 @@ public class Vm
         _ => _stack[_stackPointer - 1],
     };
 
+    public IObject GetLastPoppedStackElement() => _stack[_stackPointer];
+
     public string? Run()
     {
         for (var ip = 0; ip < _instructions.Count; ip++)
@@ -50,7 +52,7 @@ public class Vm
                         return error;
                     }
                     break;
-                
+
                 case Opcode.Add:
                     var right = Pop();
                     var left = Pop();
@@ -59,6 +61,10 @@ public class Vm
 
                     var result = leftValue + rightValue;
                     Push(new Integer(result));
+                    break;
+
+                case Opcode.Pop:
+                    Pop();
                     break;
             }
         }

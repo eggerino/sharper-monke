@@ -9,6 +9,7 @@ public enum Opcode : byte
 {
     Constant,
     Add,
+    Pop,
 }
 
 public static class OpcodeExtensions
@@ -24,6 +25,7 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
     {
         {Opcode.Constant, new("OpConstant", [2])},
         {Opcode.Add, new("OpAdd", [])},
+        {Opcode.Pop, new("OpPop", [])},
     };
 
     public static Definition? Of(Opcode op) => _lookUp.TryGetValue(op, out var def) switch

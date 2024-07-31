@@ -42,7 +42,14 @@ public class Compiler
         {
             return "No expression in the expressions statement";
         }
-        return Compile(expressionStatement.Expression);
+        var error = Compile(expressionStatement.Expression);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        Emit(Opcode.Pop);
+        return null;
     }
 
     private string? CompileInfixExpression(InfixExpression infixExpression)

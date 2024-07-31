@@ -13,6 +13,7 @@ public class CodeTest
         {
             (Opcode.Constant, new[] {65534}, new[]{Opcode.Constant.AsByte(), (byte)255, (byte)254}),
             (Opcode.Add, new int[]{}, new[]{Opcode.Add.AsByte()}),
+            (Opcode.Pop, new int[]{}, new[]{Opcode.Pop.AsByte()}),
         };
 
         foreach (var (op, operands, expected) in tests)
@@ -31,12 +32,14 @@ public class CodeTest
             Instruction.Make(Opcode.Add),
             Instruction.Make(Opcode.Constant, 2),
             Instruction.Make(Opcode.Constant, 65535),
+            Instruction.Make(Opcode.Pop),
         };
         var concatted = instructions.SelectMany(x => x).ToArray();
 
         var expected = @"0000 OpAdd
 0001 OpConstant 2
 0004 OpConstant 65535
+0007 OpPop
 ";
 
         var actual = concatted.AsSegment().Disassemble();

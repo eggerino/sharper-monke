@@ -33,8 +33,7 @@ public class VmTest
             error = vm.Run();
             Assert.Null(error);
 
-            var stackElem = vm.GetStackTop();
-            Assert.NotNull(stackElem);
+            var stackElem = vm.GetLastPoppedStackElement();
 
             TestExpectedObject(test.Expected, stackElem);
         }

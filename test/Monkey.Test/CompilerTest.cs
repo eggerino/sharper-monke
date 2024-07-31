@@ -24,7 +24,16 @@ public class CompilerTest
                     Instruction.Make(Opcode.Constant, 0),
                     Instruction.Make(Opcode.Constant, 1),
                     Instruction.Make(Opcode.Add),
-                ])
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "1; 2",
+                ExpectedConstants: [1, 2],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Pop),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Pop),
+                ]),
         ]);
     }
 
