@@ -37,17 +37,28 @@ public class Vm
         {
             var op = _instructions[ip].AsOpcode();
 
+            string? error;
             switch (op)
             {
                 case Opcode.Constant:
                     var constIndex = Instruction.ReadUint16(_instructions.Slice(ip + 1));
                     ip += 2;
 
-                    var error = Push(_constants[constIndex]);
+                    error = Push(_constants[constIndex]);
                     if (error is not null)
                     {
                         return error;
                     }
+                    break;
+                
+                case Opcode.Add:
+                    var right = Pop();
+                    var left = Pop();
+                    var leftValue = ((Integer)left).Value;
+                    var rightValue = ((Integer)right).Value;
+
+                    var result = leftValue + rightValue;
+                    Push(new Integer(result));
                     break;
             }
         }
@@ -66,5 +77,12 @@ public class Vm
         _stackPointer++;
 
         return null;
+    }
+
+    private IObject Pop()
+    {
+        var value = _stack[_stackPointer - 1];
+        _stackPointer--;
+        return value;
     }
 }

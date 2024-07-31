@@ -53,7 +53,21 @@ public class Compiler
             return error;
         }
 
-        return Compile(infixExpression.Right);
+        error = Compile(infixExpression.Right);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        switch (infixExpression.Operator)
+        {
+            case "+":
+                Emit(Opcode.Add);
+                return null;
+
+            default:
+                return $"ERROR: unknown operator {infixExpression.Operator}";
+        }
     }
 
     private string? CompileIntegerLiteral(IntegerLiteral integerLiteral)

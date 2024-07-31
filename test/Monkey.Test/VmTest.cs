@@ -12,7 +12,7 @@ public class VmTest
     [Theory]
     [InlineData("1", 1)]
     [InlineData("2", 2)]
-    [InlineData("1 + 2", 2)]    // TODO Fix me
+    [InlineData("1 + 2", 3)]
     public void TestIntegerArithmetic(string input, object expected)
     {
         RunVmTests([new(input, expected)]);

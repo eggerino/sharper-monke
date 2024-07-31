@@ -8,6 +8,7 @@ namespace Monkey.Code;
 public enum Opcode : byte
 {
     Constant,
+    Add,
 }
 
 public static class OpcodeExtensions
@@ -19,10 +20,16 @@ public static class OpcodeExtensions
 
 public record Definition(string Name, IReadOnlyList<int> OperandWidths)
 {
-    public static Definition? Of(Opcode op) => op switch
+    private static readonly Dictionary<Opcode, Definition> _lookUp = new()
     {
-        Opcode.Constant => new(op.ToString(), [2]),
-        _ => null,
+        {Opcode.Constant, new("OpConstant", [2])},
+        {Opcode.Add, new("OpAdd", [])},
+    };
+
+    public static Definition? Of(Opcode op) => _lookUp.TryGetValue(op, out var def) switch
+    {
+        true => def,
+        false => null,
     };
 
     public (int[], int) ReadOperands(ArraySegment<byte> ins)
@@ -119,6 +126,7 @@ public static class Instruction
 
         return operandCount switch
         {
+            0 => def.Name,
             1 => $"{def.Name} {operands[0]}",
             _ => $"ERROR: unhandled operandCount for {def.Name}\n",
         };

@@ -22,7 +22,8 @@ public class CompilerTest
                 ExpectedConstants: [1, 2],
                 ExpectedInstructions: [
                     Instruction.Make(Opcode.Constant, 0),
-                    Instruction.Make(Opcode.Constant, 1)
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Add),
                 ])
         ]);
     }
