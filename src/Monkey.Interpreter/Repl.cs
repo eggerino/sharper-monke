@@ -4,7 +4,7 @@ namespace Monkey.Interpreter;
 
 public static class Repl
 {
-    public static void Run(TextReader inputReader, TextWriter outputWriter)
+    public static void Run(TextReader inputReader, TextWriter outputWriter, bool useVm = true)
     {
         outputWriter.WriteLine($"Hello {System.Environment.UserName}! This is the Monkey Programming Language!");
         outputWriter.WriteLine("Feel free to type in commands");
@@ -33,14 +33,47 @@ public static class Repl
                 continue;
             }
 
-            program = MacroExpansion.DefineMacros(program, macroEnvironment);
-            var expanded = MacroExpansion.ExpandMacros(program, macroEnvironment);
-
-            var result = Evaluator.Eval(expanded, environment);
-            if (result is not null)
+            if (useVm)
             {
-                outputWriter.WriteLine(result.Inspect());
+                EvaluateVm(program, outputWriter);
+            }
+            else
+            {
+                EvaluateInterpreter(program, environment, macroEnvironment, outputWriter);
             }
         }
+    }
+
+    private static void EvaluateInterpreter(Ast.Program program, Environment environment, Environment macroEnvironment, TextWriter outputWriter)
+    {
+        program = MacroExpansion.DefineMacros(program, macroEnvironment);
+        var expanded = MacroExpansion.ExpandMacros(program, macroEnvironment);
+
+        var result = Evaluator.Eval(expanded, environment);
+        outputWriter.WriteLine(result.Inspect());
+    }
+
+    private static void EvaluateVm(Ast.Program program, TextWriter outputWriter)
+    {
+        var compiler = new Compiler();
+        var error = compiler.Compile(program);
+        if (error is not null)
+        {
+            outputWriter.WriteLine("Woops! Compilation failed:");
+            outputWriter.WriteLine(error);
+            return;
+        }
+
+        var machine = new Vm(compiler.GetByteCode());
+        error = machine.Run();
+        if (error is not null)
+        {
+            outputWriter.WriteLine("Woops! Executing bytecode failed:");
+            outputWriter.WriteLine(error);
+            return;
+        }
+
+        var stackTop = machine.GetStackTop();
+        outputWriter.WriteLine(stackTop?.Inspect());
     }
 }
