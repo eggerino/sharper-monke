@@ -5,7 +5,7 @@ using Monkey.Object;
 
 namespace Monkey;
 
-public record ByteCode(IEnumerable<byte> Instructions, IReadOnlyList<IObject> Constants);
+public record ByteCode(IReadOnlyList<byte> Instructions, IReadOnlyList<IObject> Constants);
 
 public class Compiler
 {

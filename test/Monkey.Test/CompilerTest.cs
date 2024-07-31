@@ -55,8 +55,8 @@ public class CompilerTest
 
     private static void TestInstructions(IEnumerable<IEnumerable<byte>> expected, IEnumerable<byte> actual)
     {
-        var expectedAssembly = ((ReadOnlySpan<byte>)expected.SelectMany(x => x).ToArray().AsSpan()).Disassemble();
-        var actualAssembly = ((ReadOnlySpan<byte>)actual.ToArray().AsSpan()).Disassemble();
+        var expectedAssembly = expected.SelectMany(x => x).ToArray().AsSegment().Disassemble();
+        var actualAssembly = actual.ToArray().AsSegment().Disassemble();
 
         Assert.Equal(expectedAssembly, actualAssembly);
     }

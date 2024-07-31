@@ -25,7 +25,7 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         _ => null,
     };
 
-    public (int[], int) ReadOperands(ReadOnlySpan<byte> ins)
+    public (int[], int) ReadOperands(ArraySegment<byte> ins)
     {
         var operands = new int[OperandWidths.Count];
         var offset = 0;
@@ -70,12 +70,9 @@ public static class Instruction
         };
     }
 
-    public static ushort ReadUint16(ReadOnlySpan<byte> inst)
+    public static ushort ReadUint16(ArraySegment<byte> inst)
     {
-        Span<byte> buffer = stackalloc byte[2];
-        buffer.Clear();
-
-        inst.Slice(0, 2).CopyTo(buffer);
+        Span<byte> buffer = [inst[0], inst[1]];
 
         if (BitConverter.IsLittleEndian)
         {
@@ -85,12 +82,12 @@ public static class Instruction
         return BitConverter.ToUInt16(buffer);
     }
 
-    public static string Disassemble(this ReadOnlySpan<byte> ins)
+    public static string Disassemble(this ArraySegment<byte> ins)
     {
         var builder = new StringBuilder();
 
         var i = 0;
-        while (i < ins.Length)
+        while (i < ins.Count)
         {
             var def = Definition.Of(ins[i].AsOpcode());
 

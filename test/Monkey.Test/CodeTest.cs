@@ -38,7 +38,7 @@ public class CodeTest
 0006 Constant 65535
 ";
 
-        var actual = ((ReadOnlySpan<byte>)concatted.AsSpan()).Disassemble();
+        var actual = concatted.AsSegment().Disassemble();
         
         Assert.Equal(expected, actual);
     }
@@ -47,12 +47,12 @@ public class CodeTest
     [InlineData(Opcode.Constant, 2, 65535)]
     public void TestReadOperands(Opcode op, int bytesRead, params int[] operands)
     {
-        var instruction = Instruction.Make(op, operands).ToArray();
+        var instruction = Instruction.Make(op, operands).ToArray().AsSegment();
         var definition = Definition.Of(op);
 
         Assert.NotNull(definition);
 
-        var (operandsRead, n) = definition.ReadOperands(instruction.AsSpan(1));
+        var (operandsRead, n) = definition.ReadOperands(instruction.Slice(1));
 
         Assert.Equal(bytesRead, n);
         Assert.Equal(operands, operandsRead);
