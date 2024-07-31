@@ -22,6 +22,8 @@ public class CodeTest
             (Opcode.Equal, new int[]{}, new[]{Opcode.Equal.AsByte()}),
             (Opcode.NotEqual, new int[]{}, new[]{Opcode.NotEqual.AsByte()}),
             (Opcode.GreaterThan, new int[]{}, new[]{Opcode.GreaterThan.AsByte()}),
+            (Opcode.Minus, new int[]{}, new[]{Opcode.Minus.AsByte()}),
+            (Opcode.Bang, new int[]{}, new[]{Opcode.Bang.AsByte()}),
         };
 
         foreach (var (op, operands, expected) in tests)
@@ -49,6 +51,8 @@ public class CodeTest
             Instruction.Make(Opcode.Equal),
             Instruction.Make(Opcode.NotEqual),
             Instruction.Make(Opcode.GreaterThan),
+            Instruction.Make(Opcode.Minus),
+            Instruction.Make(Opcode.Bang),
         };
         var concatted = instructions.SelectMany(x => x).ToArray();
 
@@ -64,6 +68,8 @@ public class CodeTest
 0013 OpEqual
 0014 OpNotEqual
 0015 OpGreaterThan
+0016 OpMinus
+0017 OpBang
 ";
 
         var actual = concatted.AsSegment().Disassemble();

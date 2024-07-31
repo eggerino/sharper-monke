@@ -21,6 +21,7 @@ public class Compiler
         InfixExpression expr => CompileInfixExpression(expr),
         IntegerLiteral literal => CompileIntegerLiteral(literal),
         Ast.Boolean boolean => CompileBoolean(boolean),
+        PrefixExpression expr => CompilePrefixExpression(expr),
         _ => null,
     };
 
@@ -124,6 +125,30 @@ public class Compiler
             false => Opcode.False,
         };
         Emit(op);
+        return null;
+    }
+
+    private string? CompilePrefixExpression(PrefixExpression expr)
+    {
+        var error = Compile(expr.Right);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        switch (expr.Operator)
+        {
+            case "!":
+                Emit(Opcode.Bang);
+                break;
+
+            case "-":
+                Emit(Opcode.Minus);
+                break;
+
+            default:
+                return $"ERROR: unknown operator {expr.Operator}";
+        }
         return null;
     }
 

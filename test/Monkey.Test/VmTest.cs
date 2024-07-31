@@ -22,6 +22,10 @@ public class VmTest
     [InlineData("5 * 2 + 10", 20)]
     [InlineData("5 + 2 * 10", 25)]
     [InlineData("5 * (2 + 10)", 60)]
+    [InlineData("-5", -5)]
+    [InlineData("-10", -10)]
+    [InlineData("-50 + 100 + -50", 0)]
+    [InlineData("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50)]
     public void TestIntegerArithmetic(string input, object expected)
     {
         RunVmTests([new(input, expected)]);
@@ -47,6 +51,12 @@ public class VmTest
     [InlineData("(1 < 2) == false", false)]
     [InlineData("(1 > 2) == true", false)]
     [InlineData("(1 > 2) == false", true)]
+    [InlineData("!true", false)]
+    [InlineData("!false", true)]
+    [InlineData("!5", false)]
+    [InlineData("!!true", true)]
+    [InlineData("!!false", false)]
+    [InlineData("!!5", true)]
     public void TestBooleanExpressions(string input, object expected)
     {
         RunVmTests([new(input, expected)]);

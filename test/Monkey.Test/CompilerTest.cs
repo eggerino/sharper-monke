@@ -58,6 +58,13 @@ public class CompilerTest
                     Instruction.Make(Opcode.Div),
                     Instruction.Make(Opcode.Pop),
                 ]),
+            new(Input: "-1",
+                ExpectedConstants: [1],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Minus),
+                    Instruction.Make(Opcode.Pop),
+                ]),
         ]);
     }
 
@@ -123,6 +130,13 @@ public class CompilerTest
                     Instruction.Make(Opcode.True),
                     Instruction.Make(Opcode.False),
                     Instruction.Make(Opcode.NotEqual),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "!true",
+                ExpectedConstants: [],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.True),
+                    Instruction.Make(Opcode.Bang),
                     Instruction.Make(Opcode.Pop),
                 ]),
         ]);

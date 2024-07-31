@@ -96,6 +96,22 @@ public class Vm
                         return error;
                     }
                     break;
+
+                case Opcode.Minus:
+                    error = ExecuteMinusOperator();
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
+
+                case Opcode.Bang:
+                    error = ExecuteBangOperator();
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
             }
         }
 
@@ -175,6 +191,30 @@ public class Vm
         true => _true,
         false => _false,
     };
+
+    private string? ExecuteMinusOperator()
+    {
+        var operand = Pop();
+
+        if (operand is not Integer integer)
+        {
+            return $"ERROR: unsupported type for negation: {operand.GetType()}";
+        }
+
+        return Push(new Integer(-integer.Value));
+    }
+
+    private string? ExecuteBangOperator()
+    {
+        var operand = Pop();
+
+        return operand switch
+        {
+            Object.Boolean x when x == _true => Push(_false),
+            Object.Boolean x when x == _false => Push(_true),
+            _ => Push(_false),
+        };
+    }
 
     private string? Push(IObject value)
     {
