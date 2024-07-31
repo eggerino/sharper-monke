@@ -27,6 +27,8 @@ public class CodeTest
             (Opcode.JumpNotTruthy, new int[] {65534}, new[] {Opcode.JumpNotTruthy.AsByte(), (byte)255, (byte)254}),
             (Opcode.Jump, new int[] {65534}, new[] {Opcode.Jump.AsByte(), (byte)255, (byte)254}),
             (Opcode.Null, new int[] {}, new[] {Opcode.Null.AsByte()}),
+            (Opcode.GetGlobal, new int[] {65534}, new[] {Opcode.GetGlobal.AsByte(), (byte)255, (byte)254}),
+            (Opcode.SetGlobal, new int[] {65534}, new[] {Opcode.SetGlobal.AsByte(), (byte)255, (byte)254}),
         };
 
         foreach (var (op, operands, expected) in tests)
@@ -61,6 +63,8 @@ public class CodeTest
             Instruction.Make(Opcode.Jump, 2),
             Instruction.Make(Opcode.Jump, 65535),
             Instruction.Make(Opcode.Null),
+            Instruction.Make(Opcode.GetGlobal, 65535),
+            Instruction.Make(Opcode.SetGlobal, 65535),
         };
         var concatted = instructions.SelectMany(x => x).ToArray();
 
@@ -83,6 +87,8 @@ public class CodeTest
 0024 OpJump 2
 0027 OpJump 65535
 0030 OpNull
+0031 OpGetGlobal 65535
+0034 OpSetGlobal 65535
 ";
 
         var actual = concatted.AsSegment().Disassemble();

@@ -29,6 +29,9 @@ public enum Opcode : byte
     Jump,
 
     Null,
+
+    GetGlobal,
+    SetGlobal,
 }
 
 public static class OpcodeExtensions
@@ -58,6 +61,8 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         {Opcode.JumpNotTruthy, new("OpJumpNotTruthy", [2])},
         {Opcode.Jump, new("OpJump", [2])},
         {Opcode.Null, new("OpNull", [])},
+        {Opcode.GetGlobal, new("OpGetGlobal", [2])},
+        {Opcode.SetGlobal, new("OpSetGlobal", [2])},
     };
 
     public static Definition? Of(Opcode op) => _lookUp.TryGetValue(op, out var def) switch

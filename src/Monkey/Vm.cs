@@ -9,6 +9,7 @@ namespace Monkey;
 public class Vm
 {
     private const int StackSize = 2048;
+    private const int GlobalsSize = 2048;
 
     private static readonly Object.Boolean _true = new Object.Boolean(true);
     private static readonly Object.Boolean _false = new Object.Boolean(false);
@@ -18,16 +19,24 @@ public class Vm
     private readonly IReadOnlyList<IObject> _constants;
 
     private readonly IObject[] _stack;
+    private readonly IObject[] _globals;
     private int _stackPointer;
 
-    public Vm(ByteCode byteCode)
+    private Vm(ByteCode byteCode, IObject[] globals)
     {
         _instructions = byteCode.Instructions.ToArray().AsSegment();
         _constants = byteCode.Constants;
 
         _stack = new IObject[StackSize];
+        _globals = globals;
         _stackPointer = 0;
     }
+
+    public Vm(ByteCode byteCode) : this(byteCode, CreateGlobalsArray()) { }
+
+    public static Vm NewWithGlobalStore(ByteCode byteCode, IObject[] globals) => new(byteCode, globals);
+
+    public static IObject[] CreateGlobalsArray() => new IObject[GlobalsSize];
 
     public IObject? GetStackTop() => _stackPointer switch
     {
@@ -45,6 +54,7 @@ public class Vm
 
             string? error;
             int pos;
+            int globalIndex;
             switch (op)
             {
                 case Opcode.Constant:
@@ -133,6 +143,24 @@ public class Vm
 
                 case Opcode.Null:
                     error = Push(_null);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
+
+                case Opcode.SetGlobal:
+                    globalIndex = Instruction.ReadUint16(_instructions.Slice(ip + 1));
+                    ip += 2;
+
+                    _globals[globalIndex] = Pop();
+                    break;
+
+                case Opcode.GetGlobal:
+                    globalIndex = Instruction.ReadUint16(_instructions.Slice(ip + 1));
+                    ip += 2;
+
+                    error = Push(_globals[globalIndex]);
                     if (error is not null)
                     {
                         return error;

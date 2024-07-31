@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.IO;
+using Monkey.Object;
 
 namespace Monkey.Interpreter;
 
@@ -10,8 +12,29 @@ public static class Repl
         outputWriter.WriteLine("Feel free to type in commands");
         outputWriter.WriteLine("Enter <CTRL + D> to exit");
 
-        var environment = new Environment();
-        var macroEnvironment = new Environment();
+        // VM State
+        List<IObject>? constants = null;
+        IObject[]? globals = null;
+        SymbolTable? symbolTable = null;
+
+        // Interpreter state
+        Environment? environment = null;
+        Environment? macroEnvironment = null;
+
+        if (useVm)
+        {
+            outputWriter.WriteLine("Running in VM mode");
+            constants = new();
+            globals = Vm.CreateGlobalsArray();
+            symbolTable = new();
+        }
+        else
+        {
+            outputWriter.WriteLine("Running in Interpeter mode");
+            environment = new Environment();
+            macroEnvironment = new Environment();
+        }
+
         while (true)
         {
             outputWriter.Write(">> ");
@@ -35,11 +58,11 @@ public static class Repl
 
             if (useVm)
             {
-                EvaluateVm(program, outputWriter);
+                EvaluateVm(program, constants!, globals!, symbolTable!, outputWriter);
             }
             else
             {
-                EvaluateInterpreter(program, environment, macroEnvironment, outputWriter);
+                EvaluateInterpreter(program, environment!, macroEnvironment!, outputWriter);
             }
         }
     }
@@ -53,9 +76,9 @@ public static class Repl
         outputWriter.WriteLine(result.Inspect());
     }
 
-    private static void EvaluateVm(Ast.Program program, TextWriter outputWriter)
+    private static void EvaluateVm(Ast.Program program, List<IObject> constants, IObject[] globals, SymbolTable symbolTable, TextWriter outputWriter)
     {
-        var compiler = new Compiler();
+        var compiler = Compiler.NewWithState(symbolTable, constants);
         var error = compiler.Compile(program);
         if (error is not null)
         {
@@ -64,7 +87,7 @@ public static class Repl
             return;
         }
 
-        var machine = new Vm(compiler.GetByteCode());
+        var machine = Vm.NewWithGlobalStore(compiler.GetByteCode(), globals);
         error = machine.Run();
         if (error is not null)
         {

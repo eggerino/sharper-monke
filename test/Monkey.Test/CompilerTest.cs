@@ -173,6 +173,39 @@ public class CompilerTest
         ]);
     }
 
+    [Fact]
+    public void TestGlobalLetStatements()
+    {
+        RunCompilerTests([
+            new(Input: "let one = 1; let two = 2;",
+                ExpectedConstants: [1, 2],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.SetGlobal, 1),
+                ]),
+            new(Input: "let one = 1; one;",
+                ExpectedConstants: [1],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.GetGlobal, 0),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "let one = 1; let two = one; two;",
+                ExpectedConstants: [1],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.GetGlobal, 0),
+                    Instruction.Make(Opcode.SetGlobal, 1),
+                    Instruction.Make(Opcode.GetGlobal, 1),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
     private static void RunCompilerTests(IEnumerable<CompilerTestCase> tests)
     {
         foreach (var test in tests)

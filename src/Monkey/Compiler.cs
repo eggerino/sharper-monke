@@ -15,16 +15,30 @@ public class Compiler
     private EmittedInstruction _lastInstruction = new(0, -1);
     private EmittedInstruction _previousInstruction = new(0, -1);
 
+    private readonly SymbolTable _symbolTable;
+
     private readonly List<byte> _instructions = [];
-    private readonly List<IObject> _constants = [];
+    private readonly List<IObject> _constants;
 
     public ByteCode GetByteCode() => new(_instructions, _constants);
+
+    private Compiler(SymbolTable table, List<IObject> constants)
+    {
+        _symbolTable = table;
+        _constants = constants;
+    }
+
+    public Compiler() : this(new(), []) {}
+
+    public static Compiler NewWithState(SymbolTable table, List<IObject> constants) => new(table, constants);
 
     public string? Compile(INode node) => node switch
     {
         Program program => CompileProgram(program),
         BlockStatement block => CompileBlockStatement(block),
         ExpressionStatement exprStmt => CompileExpressionStatement(exprStmt),
+        LetStatement letStatement => CompileLetStatement(letStatement),
+        Identifier ident => CompileIdentifier(ident),
         InfixExpression expr => CompileInfixExpression(expr),
         IntegerLiteral literal => CompileIntegerLiteral(literal),
         Ast.Boolean boolean => CompileBoolean(boolean),
@@ -72,6 +86,32 @@ public class Compiler
         }
 
         Emit(Opcode.Pop);
+        return null;
+    }
+
+    private string? CompileLetStatement(LetStatement letStatement)
+    {
+        var error = Compile(letStatement.Value);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        var symbol = _symbolTable.Define(letStatement.Name.Value);
+        Emit(Opcode.SetGlobal, symbol.Index);
+
+        return null;
+    }
+
+    private string? CompileIdentifier(Identifier ident)
+    {
+        var symbol = _symbolTable.Resolve(ident.Value);
+        if (symbol is null)
+        {
+            return $"ERROR: undefined variable {ident.Value}";
+        }
+
+        Emit(Opcode.GetGlobal, symbol.Index);
         return null;
     }
 

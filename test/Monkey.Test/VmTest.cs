@@ -79,6 +79,15 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    [Theory]
+    [InlineData("let one = 1; one", 1)]
+    [InlineData("let one = 1; let two = 2; one + two", 3)]
+    [InlineData("let one = 1; let two = one + one; one + two", 3)]
+    public void TestGlobalLetStatements(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
         foreach (var test in tests)
