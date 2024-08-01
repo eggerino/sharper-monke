@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Monkey.Ast;
 using Monkey.Object;
 
@@ -97,6 +98,19 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    public static IEnumerable<object[]> TestArrayLiteralsData() => [
+        ["[]", new int[0]],
+        ["[1, 2, 3]", new int[3] {1, 2, 3}],
+        ["[1 + 2, 3 * 4, 5 + 6]", new int[3] {3, 12, 11}],
+    ];
+
+    [Theory]
+    [MemberData(nameof(TestArrayLiteralsData))]
+    public void TestArrayLiterals(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
         foreach (var test in tests)
@@ -134,6 +148,7 @@ public class VmTest
             int x => a => TestIntegerObject(x, a),
             bool x => a => TestBooleanObject(x, a),
             string x => a => TestStringObject(x, a),
+            int[] x => a => TestIntArrayObject(x, a),
             _ => _ => Assert.Fail($"Unhandled test case for expected type {expected.GetType()}"),
         };
 
@@ -156,5 +171,15 @@ public class VmTest
     {
         var actualStr = Assert.IsType<Object.String>(actual);
         Assert.Equal(expected, actualStr.Value);
+    }
+
+    private static void TestIntArrayObject(int[] expected, IObject actual)
+    {
+        var actualArray = Assert.IsType<Object.Array>(actual);
+        Assert.Equal(expected.Length, actualArray.Elements.Count);
+        foreach (var (e, a) in expected.Zip(actualArray.Elements))
+        {
+            TestIntegerObject(e, a);
+        }
     }
 }

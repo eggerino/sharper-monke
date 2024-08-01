@@ -42,6 +42,7 @@ public class Compiler
         InfixExpression expr => CompileInfixExpression(expr),
         IntegerLiteral literal => CompileIntegerLiteral(literal),
         StringLiteral literal => CompileStringLiteral(literal),
+        ArrayLiteral literal => CompileArrayLiteral(literal),
         Ast.Boolean boolean => CompileBoolean(boolean),
         PrefixExpression expr => CompilePrefixExpression(expr),
         IfExpression expr => CompileIfExpression(expr),
@@ -183,6 +184,20 @@ public class Compiler
     {
         var str = new String(literal.Value);
         Emit(Opcode.Constant, AddConstant(str));
+        return null;
+    }
+
+    private string? CompileArrayLiteral(ArrayLiteral literal)
+    {
+        foreach (var element in literal.Elements)
+        {
+            var error = Compile(element);
+            if (error is not null)
+            {
+                return error;
+            }
+        }
+        Emit(Opcode.Array, literal.Elements.Count);
         return null;
     }
 

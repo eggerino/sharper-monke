@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Monkey.Code;
 using Monkey.Object;
@@ -166,6 +167,19 @@ public class Vm
                         return error;
                     }
                     break;
+
+                case Opcode.Array:
+                    var numElements = Instruction.ReadUint16(_instructions.Slice(ip + 1));
+                    ip += 2;
+
+                    var array = BuildArray(_stackPointer - numElements, _stackPointer);
+                    _stackPointer -= numElements;
+                    error = Push(array);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
             }
         }
 
@@ -288,6 +302,18 @@ public class Vm
         Null => false,
         _ => true,
     };
+
+    private Object.Array BuildArray(int startIndex, int endIndex)
+    {
+        var builder = ImmutableList<IObject>.Empty.ToBuilder();
+
+        for (var i = startIndex; i < endIndex; i++)
+        {
+            builder.Add(_stack[i]);
+        }
+
+        return new(builder.ToImmutable());
+    }
 
     private string? Push(IObject value)
     {
