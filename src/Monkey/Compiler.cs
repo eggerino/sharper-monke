@@ -47,6 +47,7 @@ public class Compiler
         Ast.Boolean boolean => CompileBoolean(boolean),
         PrefixExpression expr => CompilePrefixExpression(expr),
         IfExpression expr => CompileIfExpression(expr),
+        IndexExpression expr => CompileIndexExpression(expr),
         _ => null,
     };
 
@@ -317,6 +318,24 @@ public class Compiler
     {
         var amountToRemove = _instructions.Count - _lastInstruction.Position;
         _instructions.RemoveRange(_lastInstruction.Position, amountToRemove);
+    }
+
+    private string? CompileIndexExpression(IndexExpression expr)
+    {
+        var error = Compile(expr.Left);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        error = Compile(expr.Index);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        Emit(Opcode.Index);
+        return null;
     }
 
     private int AddConstant(IObject value)

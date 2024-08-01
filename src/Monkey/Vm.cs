@@ -199,6 +199,17 @@ public class Vm
                         return error;
                     }
                     break;
+
+                case Opcode.Index:
+                    var index = Pop();
+                    var left = Pop();
+
+                    error = ExecuteIndexExpression(left, index);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
             }
         }
 
@@ -352,6 +363,40 @@ public class Vm
         }
 
         return (new(builder.ToImmutable()), null);
+    }
+
+    private string? ExecuteIndexExpression(IObject left, IObject index) => (left, index) switch
+    {
+        (Object.Array array, Integer integer) => ExecuteArrayIndex(array, integer),
+        (Hash hash, _) => ExecuteHashIndex(hash, index),
+        _ => $"ERROR: index operator not supported: {left.GetObjectType()}",
+    };
+
+    private string? ExecuteArrayIndex(Object.Array array, Integer index)
+    {
+        var max = array.Elements.Count - 1;
+
+        if (index.Value < 0 || index.Value > max)
+        {
+            return Push(_null);
+        }
+
+        return Push(array.Elements[(int)index.Value]);
+    }
+
+    private string? ExecuteHashIndex(Hash hash, IObject index)
+    {
+        if (index is not IHashable hashKey)
+        {
+            return $"ERROR unsuable as hash key: {index.GetObjectType()}";
+        }
+
+        if (!hash.Pairs.TryGetValue(hashKey, out var value))
+        {
+            return Push(_null);
+        }
+
+        return Push(value);
     }
 
     private string? Push(IObject value)

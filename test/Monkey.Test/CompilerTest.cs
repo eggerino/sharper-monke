@@ -303,6 +303,38 @@ public class CompilerTest
         ]);
     }
 
+    [Fact]
+    public void TestIndexExpressions()
+    {
+        RunCompilerTests([
+            new(Input: "[1, 2, 3][1 + 1]",
+                ExpectedConstants: [1, 2, 3, 1, 1],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Array, 3),
+                    Instruction.Make(Opcode.Constant, 3),
+                    Instruction.Make(Opcode.Constant, 4),
+                    Instruction.Make(Opcode.Add),
+                    Instruction.Make(Opcode.Index),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "{1: 2}[2 - 1]",
+                ExpectedConstants: [1, 2, 2, 1],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Hash, 2),
+                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Constant, 3),
+                    Instruction.Make(Opcode.Sub),
+                    Instruction.Make(Opcode.Index),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
     private static void RunCompilerTests(IEnumerable<CompilerTestCase> tests)
     {
         foreach (var test in tests)

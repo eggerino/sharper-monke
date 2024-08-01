@@ -132,6 +132,22 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    [Theory]
+    [InlineData("[1, 2, 3][1]", 2)]
+    [InlineData("[1, 2, 3][0 + 2]", 3)]
+    [InlineData("[[1, 1, 1]][0][0]", 1)]
+    [InlineData("[][0]", null)]
+    [InlineData("[1, 2, 3][99]", null)]
+    [InlineData("[1][-1]", null)]
+    [InlineData("{1: 1, 2: 2}[1]", 1)]
+    [InlineData("{1: 1, 2: 2}[2]", 2)]
+    [InlineData("{1: 1}[0]", null)]
+    [InlineData("{}[0]", null)]
+    public void TestIndexExpressions(string input, object? expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
         foreach (var test in tests)
