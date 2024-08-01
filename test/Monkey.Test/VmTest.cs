@@ -88,6 +88,15 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    [Theory]
+    [InlineData(@"""monkey""", "monkey")]
+    [InlineData(@"""mon"" + ""key""", "monkey")]
+    [InlineData(@"""mon"" + ""key"" + ""banana""", "monkeybanana")]
+    public void TestStringExpressions(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
         foreach (var test in tests)
@@ -124,6 +133,7 @@ public class VmTest
             null => a => Assert.IsType<Null>(a),
             int x => a => TestIntegerObject(x, a),
             bool x => a => TestBooleanObject(x, a),
+            string x => a => TestStringObject(x, a),
             _ => _ => Assert.Fail($"Unhandled test case for expected type {expected.GetType()}"),
         };
 
@@ -140,5 +150,11 @@ public class VmTest
     {
         var actualBoolean = Assert.IsType<Object.Boolean>(actual);
         Assert.Equal(expected, actualBoolean.Value);
+    }
+
+    private static void TestStringObject(string expected, IObject actual)
+    {
+        var actualStr = Assert.IsType<Object.String>(actual);
+        Assert.Equal(expected, actualStr.Value);
     }
 }

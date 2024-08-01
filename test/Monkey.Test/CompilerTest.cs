@@ -206,6 +206,27 @@ public class CompilerTest
         ]);
     }
 
+    [Fact]
+    public void TestStringExpressions()
+    {
+        RunCompilerTests([
+            new(Input: @"""monkey""",
+                ExpectedConstants: ["monkey"],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: @"""mon"" + ""key""",
+                ExpectedConstants: ["mon", "key"],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Add),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
     private static void RunCompilerTests(IEnumerable<CompilerTestCase> tests)
     {
         foreach (var test in tests)
@@ -250,6 +271,10 @@ public class CompilerTest
             {
                 TestIntegerObject(expInt, act);
             }
+            else if (exp is string expStr)
+            {
+                TestStringObject(expStr, act);
+            }
             else
             {
                 Assert.Fail("Unexpected variant");
@@ -261,5 +286,11 @@ public class CompilerTest
     {
         var actualInt = Assert.IsType<Integer>(actual);
         Assert.Equal(expected, actualInt.Value);
+    }
+
+    private static void TestStringObject(string expected, IObject actual)
+    {
+        var actualStr = Assert.IsType<Object.String>(actual);
+        Assert.Equal(expected, actualStr.Value);
     }
 }

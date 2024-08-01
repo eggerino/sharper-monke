@@ -28,7 +28,7 @@ public class Compiler
         _constants = constants;
     }
 
-    public Compiler() : this(new(), []) {}
+    public Compiler() : this(new(), []) { }
 
     public static Compiler NewWithState(SymbolTable table, List<IObject> constants) => new(table, constants);
 
@@ -41,6 +41,7 @@ public class Compiler
         Identifier ident => CompileIdentifier(ident),
         InfixExpression expr => CompileInfixExpression(expr),
         IntegerLiteral literal => CompileIntegerLiteral(literal),
+        StringLiteral literal => CompileStringLiteral(literal),
         Ast.Boolean boolean => CompileBoolean(boolean),
         PrefixExpression expr => CompilePrefixExpression(expr),
         IfExpression expr => CompileIfExpression(expr),
@@ -175,6 +176,13 @@ public class Compiler
     {
         var integer = new Integer(integerLiteral.Value);
         Emit(Opcode.Constant, AddConstant(integer));
+        return null;
+    }
+
+    private string? CompileStringLiteral(StringLiteral literal)
+    {
+        var str = new String(literal.Value);
+        Emit(Opcode.Constant, AddConstant(str));
         return null;
     }
 

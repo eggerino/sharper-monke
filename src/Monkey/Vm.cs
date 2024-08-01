@@ -177,12 +177,12 @@ public class Vm
         var right = Pop();
         var left = Pop();
 
-        if (left is Integer leftValue && right is Integer rightValue)
+        return (left, right) switch
         {
-            return ExecuteBinaryIntegerOperation(op, leftValue, rightValue);
-        }
-
-        return $"ERROR: Unsupported types for binary operation: {left.GetType()} {right.GetType()}";
+            (Integer leftInt, Integer rightInt) => ExecuteBinaryIntegerOperation(op, leftInt, rightInt),
+            (Object.String leftStr, Object.String rightStr) => ExecuteBinaryStringOperation(op, leftStr, rightStr),
+            _ => $"ERROR: Unsupported types for binary operation: {left.GetType()} {right.GetType()}",
+        };
     }
 
     private string? ExecuteBinaryIntegerOperation(Opcode op, Integer left, Integer right)
@@ -211,6 +211,17 @@ public class Vm
         }
 
         return Push(new Integer(result));
+    }
+
+    private string? ExecuteBinaryStringOperation(Opcode op, Object.String left, Object.String right)
+    {
+        if (op != Opcode.Add)
+        {
+            return $"ERROR: unknown string operator: {op}";
+        }
+
+        var result = left.Value + right.Value;
+        return Push(new Object.String(result));
     }
 
     private string? ExecuteComparison(Opcode op)
