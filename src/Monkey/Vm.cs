@@ -56,6 +56,7 @@ public class Vm
             string? error;
             int pos;
             int globalIndex;
+            int numElements;
             switch (op)
             {
                 case Opcode.Constant:
@@ -169,12 +170,30 @@ public class Vm
                     break;
 
                 case Opcode.Array:
-                    var numElements = Instruction.ReadUint16(_instructions.Slice(ip + 1));
+                    numElements = Instruction.ReadUint16(_instructions.Slice(ip + 1));
                     ip += 2;
 
                     var array = BuildArray(_stackPointer - numElements, _stackPointer);
                     _stackPointer -= numElements;
                     error = Push(array);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
+
+                case Opcode.Hash:
+                    numElements = Instruction.ReadUint16(_instructions.Slice(ip + 1));
+                    ip += 2;
+
+                    (var hash, error) = BuildHash(_stackPointer - numElements, _stackPointer);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+
+                    _stackPointer -= numElements;
+                    error = Push(hash!);
                     if (error is not null)
                     {
                         return error;
@@ -313,6 +332,26 @@ public class Vm
         }
 
         return new(builder.ToImmutable());
+    }
+
+    private (Hash?, string?) BuildHash(int startIndex, int endIndex)
+    {
+        var builder = ImmutableDictionary<IHashable, IObject>.Empty.ToBuilder();
+
+        for (var i = startIndex; i < endIndex; i += 2)
+        {
+            var key = _stack[i];
+            var value = _stack[i + 1];
+
+            if (key is not IHashable hashKey)
+            {
+                return (null, $"ERROR: unusable as hash key {key.GetType()}");
+            }
+
+            builder.Add(hashKey, value);
+        }
+
+        return (new(builder.ToImmutable()), null);
     }
 
     private string? Push(IObject value)

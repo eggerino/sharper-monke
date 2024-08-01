@@ -111,6 +111,27 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    public static IEnumerable<object[]> TestHashLiteralsData() => [
+        ["{}", new Dictionary<IHashable, long>()],
+        ["{1: 2, 2: 3}", new Dictionary<IHashable, long>()
+        {
+            {new Integer(1), 2},
+            {new Integer(2), 3},
+        }],
+        ["{1 + 1: 2 * 2, 3 + 3: 4 * 4}", new Dictionary<IHashable, long>()
+        {
+            {new Integer(2), 4},
+            {new Integer(6), 16},
+        }],
+    ];
+
+    [Theory]
+    [MemberData(nameof(TestHashLiteralsData))]
+    public void TestHashLiterals(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
         foreach (var test in tests)
@@ -149,6 +170,7 @@ public class VmTest
             bool x => a => TestBooleanObject(x, a),
             string x => a => TestStringObject(x, a),
             int[] x => a => TestIntArrayObject(x, a),
+            Dictionary<IHashable, long> x => a => TestIntHashObject(x, a),
             _ => _ => Assert.Fail($"Unhandled test case for expected type {expected.GetType()}"),
         };
 
@@ -180,6 +202,18 @@ public class VmTest
         foreach (var (e, a) in expected.Zip(actualArray.Elements))
         {
             TestIntegerObject(e, a);
+        }
+    }
+
+    private static void TestIntHashObject(Dictionary<IHashable, long> expected, IObject actual)
+    {
+        var actualHash = Assert.IsType<Hash>(actual);
+        Assert.Equal(expected.Count, actualHash.Pairs.Count);
+
+        foreach (var (eKey, eValue) in expected)
+        {
+            var aValue = actualHash.Pairs[eKey];
+            TestIntegerObject(eValue, aValue);
         }
     }
 }

@@ -43,6 +43,7 @@ public class Compiler
         IntegerLiteral literal => CompileIntegerLiteral(literal),
         StringLiteral literal => CompileStringLiteral(literal),
         ArrayLiteral literal => CompileArrayLiteral(literal),
+        HashLiteral literal => CompileHashLiteral(literal),
         Ast.Boolean boolean => CompileBoolean(boolean),
         PrefixExpression expr => CompilePrefixExpression(expr),
         IfExpression expr => CompileIfExpression(expr),
@@ -198,6 +199,26 @@ public class Compiler
             }
         }
         Emit(Opcode.Array, literal.Elements.Count);
+        return null;
+    }
+
+    private string? CompileHashLiteral(HashLiteral literal)
+    {
+        foreach (var (key, value) in literal.Pairs)
+        {
+            var error = Compile(key);
+            if (error is not null)
+            {
+                return error;
+            }
+
+            error = Compile(value);
+            if (error is not null)
+            {
+                return error;
+            }
+        }
+        Emit(Opcode.Hash, literal.Pairs.Count * 2);
         return null;
     }
 

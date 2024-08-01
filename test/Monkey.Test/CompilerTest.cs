@@ -264,6 +264,45 @@ public class CompilerTest
         ]);
     }
 
+    [Fact]
+    public void TestHashLiterals()
+    {
+        RunCompilerTests([
+            new (Input: "{}",
+                ExpectedConstants: [],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Hash, 0),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new (Input: "{1: 2, 3: 4, 5: 6}",
+                ExpectedConstants: [1, 2, 3, 4, 5, 6],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Constant, 3),
+                    Instruction.Make(Opcode.Constant, 4),
+                    Instruction.Make(Opcode.Constant, 5),
+                    Instruction.Make(Opcode.Hash, 6),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new (Input: "{1: 2 + 3, 4: 5 * 6}",
+                ExpectedConstants: [1, 2, 3, 4, 5, 6],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Add),
+                    Instruction.Make(Opcode.Constant, 3),
+                    Instruction.Make(Opcode.Constant, 4),
+                    Instruction.Make(Opcode.Constant, 5),
+                    Instruction.Make(Opcode.Mul),
+                    Instruction.Make(Opcode.Hash, 4),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
     private static void RunCompilerTests(IEnumerable<CompilerTestCase> tests)
     {
         foreach (var test in tests)

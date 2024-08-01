@@ -34,6 +34,7 @@ public enum Opcode : byte
     SetGlobal,
 
     Array,
+    Hash,
 }
 
 public static class OpcodeExtensions
@@ -66,6 +67,7 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         {Opcode.GetGlobal, new("OpGetGlobal", [2])},
         {Opcode.SetGlobal, new("OpSetGlobal", [2])},
         {Opcode.Array, new("OpArray", [2])},
+        {Opcode.Hash, new("OpHash", [2])},
     };
 
     public static Definition? Of(Opcode op) => _lookUp.TryGetValue(op, out var def) switch
