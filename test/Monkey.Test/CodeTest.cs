@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Monkey.Code;
 
@@ -34,7 +33,7 @@ public class CodeTest
             (Opcode.Array, new int[] {65534}, new[] {Opcode.Array.AsByte(), (byte)255, (byte)254}),
             (Opcode.Hash, new int[] {65534}, new[] {Opcode.Hash.AsByte(), (byte)255, (byte)254}),
             (Opcode.Index, new int[] {}, new[] {Opcode.Index.AsByte()}),
-            (Opcode.Call, new int[] {}, new[] {Opcode.Call.AsByte()}),
+            (Opcode.Call, new int[] {255}, new[] {Opcode.Call.AsByte(), (byte)255}),
             (Opcode.ReturnValue, new int[] {}, new[] {Opcode.ReturnValue.AsByte()}),
             (Opcode.Return, new int[] {}, new[] {Opcode.Return.AsByte()}),
         };
@@ -76,7 +75,7 @@ public class CodeTest
             Instruction.Make(Opcode.Array, 65535),
             Instruction.Make(Opcode.Hash, 65535),
             Instruction.Make(Opcode.Index),
-            Instruction.Make(Opcode.Call),
+            Instruction.Make(Opcode.Call, 255),
             Instruction.Make(Opcode.ReturnValue),
             Instruction.Make(Opcode.Return),
             Instruction.Make(Opcode.GetLocal, 255),
@@ -108,11 +107,11 @@ public class CodeTest
 0037 OpArray 65535
 0040 OpHash 65535
 0043 OpIndex
-0044 OpCall
-0045 OpReturnValue
-0046 OpReturn
-0047 OpGetLocal 255
-0049 OpSetLocal 255
+0044 OpCall 255
+0046 OpReturnValue
+0047 OpReturn
+0048 OpGetLocal 255
+0050 OpSetLocal 255
 ";
 
         var actual = concatted.AsSegment().Disassemble();

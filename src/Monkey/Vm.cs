@@ -36,7 +36,7 @@ public class Vm
 
         _globals = globals;
 
-        var mainFunction = new CompiledFunction(byteCode.Instructions.ToArray().AsSegment(), -1);
+        var mainFunction = new CompiledFunction(byteCode.Instructions.ToArray().AsSegment(), -1, 0);
         var mainFrame = new Frame(mainFunction, 0);
 
         _frames = new Frame[FramesSize];
@@ -73,6 +73,7 @@ public class Vm
             int globalIndex;
             int numElements;
             byte localIndex;
+            Frame frame;
             switch (op)
             {
                 case Opcode.Constant:
@@ -228,14 +229,14 @@ public class Vm
                     break;
 
                 case Opcode.Call:
-                    var top = _stack[_stackPointer - 1];
-                    if (top is not CompiledFunction fn)
+                    var numArgs = Instruction.ReadUint8(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 1;
+
+                    error = CallFunction(numArgs);
+                    if (error is not null)
                     {
-                        return "ERROR: calling non-function";
+                        return error;
                     }
-                    var frame = new Frame(fn, _stackPointer);
-                    PushFrame(frame);
-                    _stackPointer = frame.BasePointer + fn.NumberOfLocals;
                     break;
 
                 case Opcode.ReturnValue:
@@ -440,6 +441,26 @@ public class Vm
         (Hash hash, _) => ExecuteHashIndex(hash, index),
         _ => $"ERROR: index operator not supported: {left.GetObjectType()}",
     };
+
+    private string? CallFunction(int numberOfArguments)
+    {
+        var top = _stack[_stackPointer - 1 - numberOfArguments];
+        if (top is not CompiledFunction fn)
+        {
+            return "ERROR: calling non-function";
+        }
+
+        if (numberOfArguments != fn.NumberOFParameters)
+        {
+            return $"ERROR: wrong number of arguments: want={fn.NumberOFParameters}, got={numberOfArguments}";
+        }
+
+        var frame = new Frame(fn, _stackPointer - numberOfArguments);
+        PushFrame(frame);
+
+        _stackPointer = frame.BasePointer + fn.NumberOfLocals;
+        return null;
+    }
 
     private string? ExecuteArrayIndex(Object.Array array, Integer index)
     {

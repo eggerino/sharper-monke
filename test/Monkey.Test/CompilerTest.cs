@@ -416,7 +416,7 @@ public class CompilerTest
                 ],
                 ExpectedInstructions: [
                     Instruction.Make(Opcode.Constant, 1),
-                    Instruction.Make(Opcode.Call),
+                    Instruction.Make(Opcode.Call, 0),
                     Instruction.Make(Opcode.Pop),
                 ]),
             new(Input: "let noArg = fn() { 24 }; noArg();",
@@ -432,7 +432,49 @@ public class CompilerTest
                     Instruction.Make(Opcode.Constant, 1),
                     Instruction.Make(Opcode.SetGlobal, 0),
                     Instruction.Make(Opcode.GetGlobal, 0),
-                    Instruction.Make(Opcode.Call),
+                    Instruction.Make(Opcode.Call, 0),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "let oneArg = fn(a) { a }; oneArg(24);",
+                ExpectedConstants: [
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                    24,
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.GetGlobal, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Call, 1),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "let manyArg = fn(a, b, c) { a; b; c }; manyArg(24, 25, 26);",
+                ExpectedConstants: [
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Pop),
+                        Instruction.Make(Opcode.GetLocal, 1),
+                        Instruction.Make(Opcode.Pop),
+                        Instruction.Make(Opcode.GetLocal, 2),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                    24,
+                    25,
+                    26,
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.GetGlobal, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Constant, 3),
+                    Instruction.Make(Opcode.Call, 3),
                     Instruction.Make(Opcode.Pop),
                 ]),
         ]);

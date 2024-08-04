@@ -80,7 +80,7 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         {Opcode.Array, new("OpArray", [2])},
         {Opcode.Hash, new("OpHash", [2])},
         {Opcode.Index, new("OpIndex", [])},
-        {Opcode.Call, new("OpCall", [])},
+        {Opcode.Call, new("OpCall", [1])},
         {Opcode.ReturnValue, new("OpReturnValue", [])},
         {Opcode.Return, new("OpReturn", [])},
     };

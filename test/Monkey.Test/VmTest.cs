@@ -242,6 +242,65 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    [Theory]
+    [InlineData("""
+    let identity = fn(a) { a; };
+    identity(4);
+    """, 4)]
+    [InlineData("""
+    let sum = fn(a, b) { a + b; };
+    sum(1, 2);
+    """, 3)]
+    [InlineData("""
+    let sum = fn(a, b) {
+        let c = a + b;
+        c;
+    };
+    sum(1, 2);
+    """, 3)]
+    [InlineData("""
+    let sum = fn(a, b) {
+        let c = a + b;
+        c;
+    };
+    sum(1, 2) + sum(3, 4);
+    """, 10)]
+    [InlineData("""
+    let sum = fn(a, b) {
+        let c = a + b;
+        c;
+    };
+    let outer = fn() {
+        sum(1, 2) + sum(3, 4);
+    };
+    outer();
+    """, 10)]
+    [InlineData("""
+    let globalNum = 10;
+
+    let sum = fn(a, b) {
+        let c = a + b;
+        c + globalNum;
+    };
+
+    let outer = fn() {
+        sum(1, 2) + sum(3, 4) + globalNum;
+    };
+
+    outer() + globalNum;
+    """, 50)]
+    public void TestCallingFunctionsWithArgumentsAndBindings(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
+
+
+
+
+
+
+
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
         foreach (var test in tests)
@@ -261,6 +320,22 @@ public class VmTest
 
             TestExpectedObject(test.Expected, stackElem);
         }
+    }
+
+    [Theory]
+    [InlineData("fn() { 1; }(1);", "ERROR: wrong number of arguments: want=0, got=1")]
+    [InlineData("fn(a) { a; }();", "ERROR: wrong number of arguments: want=1, got=0")]
+    [InlineData("fn(a, b) { a + b; }(1);", "ERROR: wrong number of arguments: want=2, got=1")]
+    public void TestCallingFunctionWithWrongArguments(string input, string expected)
+    {
+        var program = Parse(input);
+        var compiler = new Compiler();
+        var error = compiler.Compile(program);
+        Assert.Null(error);
+
+        var vm = new Vm(compiler.GetByteCode());
+        error = vm.Run();
+        Assert.Equal(expected, error);
     }
 
     private static Program Parse(string input)

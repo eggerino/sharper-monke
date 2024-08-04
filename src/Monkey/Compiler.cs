@@ -391,6 +391,11 @@ public class Compiler
     {
         EnterScope();
 
+        foreach (var param in literal.Parameters)
+        {
+            _symbolTable.Define(param.Value);
+        }
+
         var error = Compile(literal.Body);
         if (error is not null)
         {
@@ -411,7 +416,7 @@ public class Compiler
 
         var instructions = LeaveScope();
 
-        var compiledFunc = new CompiledFunction(instructions.ToArray().AsSegment(), numLocals);
+        var compiledFunc = new CompiledFunction(instructions.ToArray().AsSegment(), numLocals, literal.Parameters.Count);
 
         Emit(Opcode.Constant, AddConstant(compiledFunc));
         return null;
@@ -438,7 +443,16 @@ public class Compiler
             return error;
         }
 
-        Emit(Opcode.Call);
+        foreach (var arg in expr.Arguments)
+        {
+            error = Compile(arg);
+            if (error is not null)
+            {
+                return error;
+            }
+        }
+
+        Emit(Opcode.Call, expr.Arguments.Count);
         return null;
     }
 
