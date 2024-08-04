@@ -438,6 +438,58 @@ public class CompilerTest
         ]);
     }
 
+    [Fact]
+    public void TestLetStatementScopes()
+    {
+        RunCompilerTests([
+            new(Input: "let num = 55; fn() { num }",
+                ExpectedConstants: [
+                    55,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.GetGlobal, 0),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "let num = 55; num",
+                ExpectedConstants: [
+                    55,
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.GetGlobal, 0),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "fn() { let a = 55; let b = 77; a + b }",
+                ExpectedConstants: [
+                    55,
+                    77,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Constant, 0),
+                        Instruction.Make(Opcode.SetLocal, 0),
+                        Instruction.Make(Opcode.Constant, 1),
+                        Instruction.Make(Opcode.SetLocal, 1),
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.GetLocal, 1),
+                        Instruction.Make(Opcode.Add),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
     private static void RunCompilerTests(IEnumerable<CompilerTestCase> tests)
     {
         foreach (var test in tests)

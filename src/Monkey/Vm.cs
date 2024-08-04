@@ -36,8 +36,8 @@ public class Vm
 
         _globals = globals;
 
-        var mainFunction = new CompiledFunction(byteCode.Instructions.ToArray().AsSegment());
-        var mainFrame = new Frame(mainFunction);
+        var mainFunction = new CompiledFunction(byteCode.Instructions.ToArray().AsSegment(), -1);
+        var mainFrame = new Frame(mainFunction, 0);
 
         _frames = new Frame[FramesSize];
         _frames[0] = mainFrame;
@@ -72,6 +72,7 @@ public class Vm
             int pos;
             int globalIndex;
             int numElements;
+            byte localIndex;
             switch (op)
             {
                 case Opcode.Constant:
@@ -232,15 +233,16 @@ public class Vm
                     {
                         return "ERROR: calling non-function";
                     }
-                    var frame = new Frame(fn);
+                    var frame = new Frame(fn, _stackPointer);
                     PushFrame(frame);
+                    _stackPointer = frame.BasePointer + fn.NumberOfLocals;
                     break;
 
                 case Opcode.ReturnValue:
                     var returnValue = Pop();
 
-                    PopFrame();
-                    Pop();      // The function object
+                    frame = PopFrame();
+                    _stackPointer = frame.BasePointer - 1;  // Also pop the function object
 
                     error = Push(returnValue);
                     if (error is not null)
@@ -250,10 +252,28 @@ public class Vm
                     break;
 
                 case Opcode.Return:
-                    PopFrame();
-                    Pop();      // The function object
+                    frame = PopFrame();
+                    _stackPointer = frame.BasePointer - 1;  // Also pop the function object
 
                     error = Push(_null);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
+
+                case Opcode.SetLocal:
+                    localIndex = Instruction.ReadUint8(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 1;
+
+                    _stack[GetCurrentFrame().BasePointer + localIndex] = Pop();
+                    break;
+
+                case Opcode.GetLocal:
+                    localIndex = Instruction.ReadUint8(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 1;
+
+                    error = Push(_stack[GetCurrentFrame().BasePointer + localIndex]);
                     if (error is not null)
                     {
                         return error;

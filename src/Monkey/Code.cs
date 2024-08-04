@@ -33,6 +33,9 @@ public enum Opcode : byte
     GetGlobal,
     SetGlobal,
 
+    GetLocal,
+    SetLocal,
+
     Array,
     Hash,
 
@@ -72,6 +75,8 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         {Opcode.Null, new("OpNull", [])},
         {Opcode.GetGlobal, new("OpGetGlobal", [2])},
         {Opcode.SetGlobal, new("OpSetGlobal", [2])},
+        {Opcode.GetLocal, new("OpGetLocal", [1])},
+        {Opcode.SetLocal, new("OpSetLocal", [1])},
         {Opcode.Array, new("OpArray", [2])},
         {Opcode.Hash, new("OpHash", [2])},
         {Opcode.Index, new("OpIndex", [])},
@@ -97,6 +102,7 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
 
             operands[i] = width switch
             {
+                1 => Instruction.ReadUint8(ins.Slice(offset)),
                 2 => Instruction.ReadUint16(ins.Slice(offset)),
                 _ => throw new NotImplementedException(),
             };
@@ -129,6 +135,11 @@ public static class Instruction
             true => bytes.Reverse(),
             false => bytes,
         };
+    }
+
+    public static byte ReadUint8(ArraySegment<byte> inst)
+    {
+        return inst[0];
     }
 
     public static ushort ReadUint16(ArraySegment<byte> inst)

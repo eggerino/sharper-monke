@@ -29,6 +29,8 @@ public class CodeTest
             (Opcode.Null, new int[] {}, new[] {Opcode.Null.AsByte()}),
             (Opcode.GetGlobal, new int[] {65534}, new[] {Opcode.GetGlobal.AsByte(), (byte)255, (byte)254}),
             (Opcode.SetGlobal, new int[] {65534}, new[] {Opcode.SetGlobal.AsByte(), (byte)255, (byte)254}),
+            (Opcode.GetLocal, new int[] {255}, new[] {Opcode.GetLocal.AsByte(), (byte)255}),
+            (Opcode.SetLocal, new int[] {255}, new[] {Opcode.SetLocal.AsByte(), (byte)255}),
             (Opcode.Array, new int[] {65534}, new[] {Opcode.Array.AsByte(), (byte)255, (byte)254}),
             (Opcode.Hash, new int[] {65534}, new[] {Opcode.Hash.AsByte(), (byte)255, (byte)254}),
             (Opcode.Index, new int[] {}, new[] {Opcode.Index.AsByte()}),
@@ -77,6 +79,8 @@ public class CodeTest
             Instruction.Make(Opcode.Call),
             Instruction.Make(Opcode.ReturnValue),
             Instruction.Make(Opcode.Return),
+            Instruction.Make(Opcode.GetLocal, 255),
+            Instruction.Make(Opcode.SetLocal, 255),
         };
         var concatted = instructions.SelectMany(x => x).ToArray();
 
@@ -107,6 +111,8 @@ public class CodeTest
 0044 OpCall
 0045 OpReturnValue
 0046 OpReturn
+0047 OpGetLocal 255
+0049 OpSetLocal 255
 ";
 
         var actual = concatted.AsSegment().Disassemble();

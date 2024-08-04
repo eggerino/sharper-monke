@@ -23,7 +23,7 @@ public class Compiler
     private readonly List<CompilationScope> _scopes = [CompilationScope.Empty()];
     private int _scopeIndex = 0;
 
-    private readonly SymbolTable _symbolTable;
+    private SymbolTable _symbolTable;
     private readonly List<IObject> _constants;
 
     public ByteCode GetByteCode() => new(CurrentInstructions(), _constants);
@@ -111,7 +111,14 @@ public class Compiler
         }
 
         var symbol = _symbolTable.Define(letStatement.Name.Value);
-        Emit(Opcode.SetGlobal, symbol.Index);
+        if (symbol.Scope == Scopes.Global)
+        {
+            Emit(Opcode.SetGlobal, symbol.Index);
+        }
+        else
+        {
+            Emit(Opcode.SetLocal, symbol.Index);
+        }
 
         return null;
     }
@@ -136,7 +143,15 @@ public class Compiler
             return $"ERROR: undefined variable {ident.Value}";
         }
 
-        Emit(Opcode.GetGlobal, symbol.Index);
+        if (symbol.Scope == Scopes.Global)
+        {
+            Emit(Opcode.GetGlobal, symbol.Index);
+        }
+        else
+        {
+            Emit(Opcode.GetLocal, symbol.Index);
+        }
+
         return null;
     }
 
@@ -392,9 +407,11 @@ public class Compiler
             Emit(Opcode.Return);
         }
 
+        int numLocals = _symbolTable.NumberOfDefinitions;
+
         var instructions = LeaveScope();
 
-        var compiledFunc = new CompiledFunction(instructions.ToArray().AsSegment());
+        var compiledFunc = new CompiledFunction(instructions.ToArray().AsSegment(), numLocals);
 
         Emit(Opcode.Constant, AddConstant(compiledFunc));
         return null;
@@ -479,6 +496,7 @@ public class Compiler
     {
         _scopes.Add(CompilationScope.Empty());
         _scopeIndex++;
+        _symbolTable = _symbolTable.NewEnclosedTable();
     }
 
     private List<byte> LeaveScope()
@@ -486,6 +504,7 @@ public class Compiler
         var instructions = CurrentInstructions();
         _scopes.RemoveAt(_scopeIndex);
         _scopeIndex--;
+        _symbolTable = _symbolTable.Outer!;
         return instructions;
     }
 }

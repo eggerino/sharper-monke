@@ -168,8 +168,76 @@ public class VmTest
     }
 
     [Theory]
-    [InlineData("let returnsOne = fn() { 1; }; let returnsOneReturner = fn() { returnsOne; }; returnsOneReturner()();", 1)]
+    [InlineData("""
+    let returnsOne = fn() { 1; };
+    let returnsOneReturner = fn() { returnsOne; };
+    returnsOneReturner()();
+    """, 1)]
+    [InlineData("""
+    let returnsOneReturner = fn() {
+        let returnsOne = fn() { 1; };
+        returnsOne;
+    };
+    returnsOneReturner()();
+    """, 1)]
     public void TestFirstClassFunctions(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
+    [Theory]
+    [InlineData("""
+    let one = fn() {
+        let one = 1;
+        one
+    };
+    one();
+    """, 1)]
+    [InlineData("""
+    let oneAndTwo = fn() {
+        let one = 1;
+        let two = 2;
+        one + two
+    };
+    oneAndTwo();
+    """, 3)]
+    [InlineData("""
+    let oneAndTwo = fn() {
+        let one = 1;
+        let two = 2;
+        one + two
+    };
+    let threeAndFour = fn() {
+        let three = 3;
+        let four = 4;
+        three + four
+    };
+    oneAndTwo() + threeAndFour();
+    """, 10)]
+    [InlineData("""
+    let firstFoobar = fn() {
+        let foobar = 50;
+        foobar;
+    };
+    let secondFoobar = fn() {
+        let foobar = 100;
+        foobar;
+    };
+    firstFoobar() + secondFoobar();
+    """, 150)]
+    [InlineData("""
+    let globalSeed = 50;
+    let minusOne = fn() {
+        let num = 1;
+        globalSeed - num;
+    };
+    let minusTwo = fn() {
+        let num = 2;
+        globalSeed - num;
+    };
+    minusOne() + minusTwo();
+    """, 97)]
+    public void TestCallingFunctionsWithBindings(string input, object expected)
     {
         RunVmTests([new(input, expected)]);
     }

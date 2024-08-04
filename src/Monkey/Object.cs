@@ -151,7 +151,7 @@ public record Macro(ImmutableList<Identifier> Parameters, BlockStatement Body, E
     }
 }
 
-public record CompiledFunction(ArraySegment<byte> Instructions) : IObject
+public record CompiledFunction(ArraySegment<byte> Instructions, int NumberOfLocals) : IObject
 {
     public ObjectType GetObjectType() => ObjectType.CompiledFunction;
 
