@@ -37,6 +37,10 @@ public enum Opcode : byte
     Hash,
 
     Index,
+
+    Call,
+    ReturnValue,
+    Return,
 }
 
 public static class OpcodeExtensions
@@ -71,6 +75,9 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         {Opcode.Array, new("OpArray", [2])},
         {Opcode.Hash, new("OpHash", [2])},
         {Opcode.Index, new("OpIndex", [])},
+        {Opcode.Call, new("OpCall", [])},
+        {Opcode.ReturnValue, new("OpReturnValue", [])},
+        {Opcode.Return, new("OpReturn", [])},
     };
 
     public static Definition? Of(Opcode op) => _lookUp.TryGetValue(op, out var def) switch

@@ -11,26 +11,37 @@ public class Vm
 {
     private const int StackSize = 2048;
     private const int GlobalsSize = 2048;
+    private const int FramesSize = 1024;
 
     private static readonly Object.Boolean _true = new Object.Boolean(true);
     private static readonly Object.Boolean _false = new Object.Boolean(false);
     private static readonly Null _null = new Null();
 
-    private readonly ArraySegment<byte> _instructions;
     private readonly IReadOnlyList<IObject> _constants;
 
     private readonly IObject[] _stack;
-    private readonly IObject[] _globals;
     private int _stackPointer;
+
+    private readonly IObject[] _globals;
+
+    private readonly Frame[] _frames;
+    private int _frameIndex;
 
     private Vm(ByteCode byteCode, IObject[] globals)
     {
-        _instructions = byteCode.Instructions.ToArray().AsSegment();
         _constants = byteCode.Constants;
 
         _stack = new IObject[StackSize];
-        _globals = globals;
         _stackPointer = 0;
+
+        _globals = globals;
+
+        var mainFunction = new CompiledFunction(byteCode.Instructions.ToArray().AsSegment());
+        var mainFrame = new Frame(mainFunction);
+
+        _frames = new Frame[FramesSize];
+        _frames[0] = mainFrame;
+        _frameIndex = 1;
     }
 
     public Vm(ByteCode byteCode) : this(byteCode, CreateGlobalsArray()) { }
@@ -49,9 +60,13 @@ public class Vm
 
     public string? Run()
     {
-        for (var ip = 0; ip < _instructions.Count; ip++)
+        while (GetCurrentFrame().InstructionPointer < GetCurrentFrame().GetInstructions().Count - 1)
         {
-            var op = _instructions[ip].AsOpcode();
+            GetCurrentFrame().InstructionPointer++;
+
+            var ip = GetCurrentFrame().InstructionPointer;
+            var ins = GetCurrentFrame().GetInstructions();
+            var op = ins[ip].AsOpcode();
 
             string? error;
             int pos;
@@ -60,8 +75,8 @@ public class Vm
             switch (op)
             {
                 case Opcode.Constant:
-                    var constIndex = Instruction.ReadUint16(_instructions.Slice(ip + 1));
-                    ip += 2;
+                    var constIndex = Instruction.ReadUint16(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 2;
 
                     error = Push(_constants[constIndex]);
                     if (error is not null)
@@ -128,19 +143,19 @@ public class Vm
                     break;
 
                 case Opcode.JumpNotTruthy:
-                    pos = Instruction.ReadUint16(_instructions.Slice(ip + 1));
-                    ip += 2;    // Skip the operands no matter the condition
+                    pos = Instruction.ReadUint16(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 2;    // Skip the operands no matter the condition
                     var condition = Pop();
 
                     if (!IsTruthy(condition))
                     {
-                        ip = pos - 1;
+                        GetCurrentFrame().InstructionPointer = pos - 1;
                     }
                     break;
 
                 case Opcode.Jump:
-                    pos = Instruction.ReadUint16(_instructions.Slice(ip + 1));
-                    ip = pos - 1;   // end of iteration will increment ip again
+                    pos = Instruction.ReadUint16(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer = pos - 1;   // end of iteration will increment ip again
                     break;
 
                 case Opcode.Null:
@@ -152,15 +167,15 @@ public class Vm
                     break;
 
                 case Opcode.SetGlobal:
-                    globalIndex = Instruction.ReadUint16(_instructions.Slice(ip + 1));
-                    ip += 2;
+                    globalIndex = Instruction.ReadUint16(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 2;
 
                     _globals[globalIndex] = Pop();
                     break;
 
                 case Opcode.GetGlobal:
-                    globalIndex = Instruction.ReadUint16(_instructions.Slice(ip + 1));
-                    ip += 2;
+                    globalIndex = Instruction.ReadUint16(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 2;
 
                     error = Push(_globals[globalIndex]);
                     if (error is not null)
@@ -170,8 +185,8 @@ public class Vm
                     break;
 
                 case Opcode.Array:
-                    numElements = Instruction.ReadUint16(_instructions.Slice(ip + 1));
-                    ip += 2;
+                    numElements = Instruction.ReadUint16(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 2;
 
                     var array = BuildArray(_stackPointer - numElements, _stackPointer);
                     _stackPointer -= numElements;
@@ -183,8 +198,8 @@ public class Vm
                     break;
 
                 case Opcode.Hash:
-                    numElements = Instruction.ReadUint16(_instructions.Slice(ip + 1));
-                    ip += 2;
+                    numElements = Instruction.ReadUint16(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 2;
 
                     (var hash, error) = BuildHash(_stackPointer - numElements, _stackPointer);
                     if (error is not null)
@@ -205,6 +220,40 @@ public class Vm
                     var left = Pop();
 
                     error = ExecuteIndexExpression(left, index);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
+
+                case Opcode.Call:
+                    var top = _stack[_stackPointer - 1];
+                    if (top is not CompiledFunction fn)
+                    {
+                        return "ERROR: calling non-function";
+                    }
+                    var frame = new Frame(fn);
+                    PushFrame(frame);
+                    break;
+
+                case Opcode.ReturnValue:
+                    var returnValue = Pop();
+
+                    PopFrame();
+                    Pop();      // The function object
+
+                    error = Push(returnValue);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
+
+                case Opcode.Return:
+                    PopFrame();
+                    Pop();      // The function object
+
+                    error = Push(_null);
                     if (error is not null)
                     {
                         return error;
@@ -417,5 +466,19 @@ public class Vm
         var value = _stack[_stackPointer - 1];
         _stackPointer--;
         return value;
+    }
+
+    private Frame GetCurrentFrame() => _frames[_frameIndex - 1];
+
+    private void PushFrame(Frame frame)
+    {
+        _frames[_frameIndex] = frame;
+        _frameIndex++;
+    }
+
+    private Frame PopFrame()
+    {
+        _frameIndex--;
+        return _frames[_frameIndex];
     }
 }

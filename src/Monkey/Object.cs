@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -20,6 +21,7 @@ public enum ObjectType
     Hash,
     Quote,
     Macro,
+    CompiledFunction,
 }
 
 public interface IObject
@@ -146,5 +148,15 @@ public record Macro(ImmutableList<Identifier> Parameters, BlockStatement Body, E
         builder.Append(Body.GetDebugString());
         builder.Append("}");
         return builder.ToString();
+    }
+}
+
+public record CompiledFunction(ArraySegment<byte> Instructions) : IObject
+{
+    public ObjectType GetObjectType() => ObjectType.CompiledFunction;
+
+    public string Inspect()
+    {
+        return $"CompiledFunction[{GetHashCode()}]";
     }
 }

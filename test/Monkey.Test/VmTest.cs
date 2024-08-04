@@ -148,6 +148,32 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    [Theory]
+    [InlineData("let fivePlusTen = fn() { 5 + 10 }; fivePlusTen();", 15)]
+    [InlineData("let one = fn() { 1; }; let two = fn() { 2; }; one() + two();", 3)]
+    [InlineData("let a = fn() { 1 }; let b = fn() { a() + 1 }; let c = fn() { b() + 1 }; c();", 3)]
+    [InlineData("let earlyExit = fn() { return 99; 100; }; earlyExit();", 99)]
+    [InlineData("let earlyExit = fn() { return 99; return 100; }; earlyExit();", 99)]
+    public void TestCallingFunctionsWithoutArguments(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
+    [Theory]
+    [InlineData("let noReturn = fn() { }; noReturn();", null)]
+    [InlineData("let noReturn = fn() { }; let noReturnTwo = fn() { noReturn(); }; noReturnTwo();", null)]
+    public void TestFunctionsWitoutReturnValue(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
+    [Theory]
+    [InlineData("let returnsOne = fn() { 1; }; let returnsOneReturner = fn() { returnsOne; }; returnsOneReturner()();", 1)]
+    public void TestFirstClassFunctions(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
         foreach (var test in tests)

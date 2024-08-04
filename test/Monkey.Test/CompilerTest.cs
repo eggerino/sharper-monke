@@ -335,6 +335,109 @@ public class CompilerTest
         ]);
     }
 
+    [Fact]
+    public void TestFunctions()
+    {
+        RunCompilerTests([
+            new(Input: "fn() { return 5 + 10 }",
+                ExpectedConstants: [
+                    5,
+                    10,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Constant, 0),
+                        Instruction.Make(Opcode.Constant, 1),
+                        Instruction.Make(Opcode.Add),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "fn() { 5 + 10 }",
+                ExpectedConstants: [
+                    5,
+                    10,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Constant, 0),
+                        Instruction.Make(Opcode.Constant, 1),
+                        Instruction.Make(Opcode.Add),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "fn() { 1; 2 }",
+                ExpectedConstants: [
+                    1,
+                    2,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Constant, 0),
+                        Instruction.Make(Opcode.Pop),
+                        Instruction.Make(Opcode.Constant, 1),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "fn() { }",
+                ExpectedConstants: [
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Return),
+                    },
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
+    [Fact]
+    public void TestFunctionCalls()
+    {
+        RunCompilerTests([
+            new(Input: "fn() { 24 }();",
+                ExpectedConstants: [
+                    24,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Constant, 0),
+                        Instruction.Make(Opcode.ReturnValue),
+                    }
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Call),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "let noArg = fn() { 24 }; noArg();",
+                ExpectedConstants: [
+                    24,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Constant, 0),
+                        Instruction.Make(Opcode.ReturnValue),
+                    }
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.GetGlobal, 0),
+                    Instruction.Make(Opcode.Call),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
     private static void RunCompilerTests(IEnumerable<CompilerTestCase> tests)
     {
         foreach (var test in tests)
@@ -383,6 +486,10 @@ public class CompilerTest
             {
                 TestStringObject(expStr, act);
             }
+            else if (exp is IEnumerable<byte>[] expCode)
+            {
+                TestCompiledFunctionObject(expCode, act);
+            }
             else
             {
                 Assert.Fail("Unexpected variant");
@@ -400,5 +507,11 @@ public class CompilerTest
     {
         var actualStr = Assert.IsType<Object.String>(actual);
         Assert.Equal(expected, actualStr.Value);
+    }
+
+    private static void TestCompiledFunctionObject(IEnumerable<byte>[] expected, IObject actual)
+    {
+        var actualFunc = Assert.IsType<CompiledFunction>(actual);
+        TestInstructions(expected, actualFunc.Instructions);
     }
 }

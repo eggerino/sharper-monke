@@ -32,6 +32,9 @@ public class CodeTest
             (Opcode.Array, new int[] {65534}, new[] {Opcode.Array.AsByte(), (byte)255, (byte)254}),
             (Opcode.Hash, new int[] {65534}, new[] {Opcode.Hash.AsByte(), (byte)255, (byte)254}),
             (Opcode.Index, new int[] {}, new[] {Opcode.Index.AsByte()}),
+            (Opcode.Call, new int[] {}, new[] {Opcode.Call.AsByte()}),
+            (Opcode.ReturnValue, new int[] {}, new[] {Opcode.ReturnValue.AsByte()}),
+            (Opcode.Return, new int[] {}, new[] {Opcode.Return.AsByte()}),
         };
 
         foreach (var (op, operands, expected) in tests)
@@ -71,6 +74,9 @@ public class CodeTest
             Instruction.Make(Opcode.Array, 65535),
             Instruction.Make(Opcode.Hash, 65535),
             Instruction.Make(Opcode.Index),
+            Instruction.Make(Opcode.Call),
+            Instruction.Make(Opcode.ReturnValue),
+            Instruction.Make(Opcode.Return),
         };
         var concatted = instructions.SelectMany(x => x).ToArray();
 
@@ -98,6 +104,9 @@ public class CodeTest
 0037 OpArray 65535
 0040 OpHash 65535
 0043 OpIndex
+0044 OpCall
+0045 OpReturnValue
+0046 OpReturn
 ";
 
         var actual = concatted.AsSegment().Disassemble();
