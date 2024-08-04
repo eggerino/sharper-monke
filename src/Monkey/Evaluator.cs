@@ -245,7 +245,11 @@ public static class Evaluator
         return function switch
         {
             Function f => UnwrapReturnValue(Eval(f.Body, ExtendFunctionEnvironment(f, arguments))),
-            Builtin f => f.Function(arguments),
+            Builtin f => f.Function(arguments) switch
+            {
+                IObject result => result,
+                null => Null,
+            },
             _ => new Error($"not a function: {function.GetObjectType()}"),
         };
     }

@@ -91,7 +91,7 @@ public record Function(ImmutableList<Identifier> Parameters, BlockStatement Body
     }
 }
 
-public delegate IObject BuiltinFunction(IEnumerable<IObject> arguments);
+public delegate IObject? BuiltinFunction(IEnumerable<IObject> arguments);
 
 public record Builtin(BuiltinFunction Function) : IObject
 {

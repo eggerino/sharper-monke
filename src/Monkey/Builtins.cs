@@ -7,59 +7,61 @@ namespace Monkey;
 
 public static class Builtins
 {
-    private static readonly Dictionary<string, Builtin> _builtins = new()
-    {
-        {"len", new(Len)},
-        {"first", new(First)},
-        {"last", new(Last)},
-        {"rest", new(Rest)},
-        {"push", new(Push)},
-        {"keys", new(Keys)},
-        {"puts", new(Puts)},
-    };
+    public static IReadOnlyList<(string Name, Builtin Delegate)> All { get; } = [
+        ("len", new(Len)),
+        ("first", new(First)),
+        ("last", new(Last)),
+        ("rest", new(Rest)),
+        ("push", new(Push)),
+        ("keys", new(Keys)),
+        ("puts", new(Puts)),
+    ];
 
-    public static Builtin? Get(string name) => _builtins.TryGetValue(name, out var builtin) ? builtin : null;
+    private static readonly Dictionary<string, int> _indexMap = All.Select((kvp, index) => (kvp.Name, index)).ToDictionary();
+
+
+    public static Builtin? Get(string name) => _indexMap.TryGetValue(name, out var index) ? All[index].Delegate : null;
 
     private static IObject Len(IEnumerable<IObject> arguments)
     {
         return arguments.ToList() switch
         {
-        [String str] => new Integer(str.Value.Length),
-        [Array arr] => new Integer(arr.Elements.Count),
-        [Hash hash] => new Integer(hash.Pairs.Count),
-        [var arg] => new Error($"argument to `len` not supported, got {arg.GetObjectType()}"),
-        [.. var args] => new Error($"wrong number of arguments. got={args.Count}, want=1"),
+            [String str] => new Integer(str.Value.Length),
+            [Array arr] => new Integer(arr.Elements.Count),
+            [Hash hash] => new Integer(hash.Pairs.Count),
+            [var arg] => new Error($"argument to `len` not supported, got {arg.GetObjectType()}"),
+            [.. var args] => new Error($"wrong number of arguments. got={args.Count}, want=1"),
         };
     }
 
-    private static IObject First(IEnumerable<IObject> arguments)
+    private static IObject? First(IEnumerable<IObject> arguments)
     {
         return arguments.ToList() switch
         {
-        [Array arr] when arr.Elements.Count > 0 => arr.Elements[0],
-        [Array _] => Evaluator.Null,
-        [var arg] => new Error($"argument to `first` must be Array, got {arg.GetObjectType()}"),
-        [.. var args] => new Error($"wrong number of arguments. got={args.Count}, want=1"),
+            [Array arr] when arr.Elements.Count > 0 => arr.Elements[0],
+            [Array _] => null,
+            [var arg] => new Error($"argument to `first` must be Array, got {arg.GetObjectType()}"),
+            [.. var args] => new Error($"wrong number of arguments. got={args.Count}, want=1"),
         };
     }
 
-    private static IObject Last(IEnumerable<IObject> arguments)
+    private static IObject? Last(IEnumerable<IObject> arguments)
     {
         return arguments.ToList() switch
         {
         [Array arr] when arr.Elements.Count > 0 => arr.Elements.Last(),
-        [Array _] => Evaluator.Null,
+        [Array _] => null,
         [var arg] => new Error($"argument to `last` must be Array, got {arg.GetObjectType()}"),
         [.. var args] => new Error($"wrong number of arguments. got={args.Count}, want=1"),
         };
     }
 
-    private static IObject Rest(IEnumerable<IObject> arguments)
+    private static IObject? Rest(IEnumerable<IObject> arguments)
     {
         return arguments.ToList() switch
         {
         [Array arr] when arr.Elements.Count > 0 => arr with { Elements = arr.Elements.RemoveAt(0) },
-        [Array _] => Evaluator.Null,
+        [Array _] => null,
         [var arg] => new Error($"argument to `rest` must be Array, got {arg.GetObjectType()}"),
         [.. var args] => new Error($"wrong number of arguments. got={args.Count}, want=1"),
         };
@@ -89,13 +91,13 @@ public static class Builtins
         };
     }
 
-    private static Null Puts(IEnumerable<IObject> arguments)
+    private static IObject? Puts(IEnumerable<IObject> arguments)
     {
         foreach (var argument in arguments)
         {
             System.Console.WriteLine(argument.Inspect());
         }
 
-        return Evaluator.Null;
+        return null;
     }
 }
