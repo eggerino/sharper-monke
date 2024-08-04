@@ -110,13 +110,13 @@ public class Compiler
 
     private string? CompileLetStatement(LetStatement letStatement)
     {
+        var symbol = _symbolTable.Define(letStatement.Name.Value);
         var error = Compile(letStatement.Value);
         if (error is not null)
         {
             return error;
         }
 
-        var symbol = _symbolTable.Define(letStatement.Name.Value);
         if (symbol.Scope == Scopes.Global)
         {
             Emit(Opcode.SetGlobal, symbol.Index);
@@ -168,6 +168,14 @@ public class Compiler
 
             case Scopes.Builtin:
                 Emit(Opcode.GetBuiltin, symbol.Index);
+                break;
+
+            case Scopes.Free:
+                Emit(Opcode.GetFree, symbol.Index);
+                break;
+
+            case Scopes.Function:
+                Emit(Opcode.CurrentClosure);
                 break;
         }
     }
@@ -408,6 +416,11 @@ public class Compiler
     {
         EnterScope();
 
+        if (!string.IsNullOrEmpty(literal.Name))
+        {
+            _symbolTable.DefineFunctionName(literal.Name);
+        }
+
         foreach (var param in literal.Parameters)
         {
             _symbolTable.Define(param.Value);
@@ -429,14 +442,19 @@ public class Compiler
             Emit(Opcode.Return);
         }
 
+        var freeSymbols = _symbolTable.FreeSymbols;
         int numLocals = _symbolTable.NumberOfDefinitions;
-
         var instructions = LeaveScope();
+
+        foreach (var freeSymbol in freeSymbols)
+        {
+            LoadSymbol(freeSymbol);
+        }
 
         var compiledFunc = new CompiledFunction(instructions.ToArray().AsSegment(), numLocals, literal.Parameters.Count);
 
         var fnIndex = AddConstant(compiledFunc);
-        Emit(Opcode.Closure, fnIndex, 0);
+        Emit(Opcode.Closure, fnIndex, freeSymbols.Count);
 
         return null;
     }

@@ -154,7 +154,7 @@ public record IfExpression(Token Token, IExpression Condition, BlockStatement Co
     }
 }
 
-public record FunctionLiteral(Token Token, ImmutableList<Identifier> Parameters, BlockStatement Body) : IExpression
+public record FunctionLiteral(Token Token, ImmutableList<Identifier> Parameters, BlockStatement Body, string? Name) : IExpression
 {
     public string GetTokenLiteral() => Token.Literal;
 
@@ -162,6 +162,12 @@ public record FunctionLiteral(Token Token, ImmutableList<Identifier> Parameters,
     {
         var builder = new StringBuilder();
         builder.Append(Token.Literal);
+        if (!string.IsNullOrEmpty(Name))
+        {
+            builder.Append("<");
+            builder.Append(Name);
+            builder.Append(">");
+        }
         builder.Append("(");
         builder.Append(string.Join(", ", Parameters.Select(x => x.GetDebugString())));
         builder.Append(")");

@@ -154,6 +154,11 @@ public class Parser(Lexer lexer)
                 return null;
             }
 
+            if (value is FunctionLiteral func)
+            {
+                value = func with { Name = name.Value };
+            }
+
             if (PeekTokenIs(TokenType.Semicolon))
             {
                 NextToken();
@@ -374,7 +379,7 @@ public class Parser(Lexer lexer)
 
             var body = ParseBlockStatement();
 
-            return new(token, parameters, body);
+            return new(token, parameters, body, "");
         }
 
         private ImmutableList<Identifier>? ParseFunctionParameters()

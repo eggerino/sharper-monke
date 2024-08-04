@@ -86,8 +86,8 @@ public class AstTest
     [Fact]
     public void TestModifyFunctionLiteral()
     {
-        var input = new FunctionLiteral(_token, [], new(_token, [new ExpressionStatement(_token, One())]));
-        var expected = new FunctionLiteral(_token, [], new(_token, [new ExpressionStatement(_token, Two())]));
+        var input = new FunctionLiteral(_token, [], new(_token, [new ExpressionStatement(_token, One())]), "");
+        var expected = new FunctionLiteral(_token, [], new(_token, [new ExpressionStatement(_token, Two())]), "");
 
         var actual = input.Transform(TurnOneIntoTwo);
         var func = Assert.IsType<FunctionLiteral>(actual);

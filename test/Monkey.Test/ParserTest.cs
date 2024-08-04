@@ -443,6 +443,24 @@ public class ParserTest
         TestInfixExpression(bodyStmt.Expression!, "x", "+", "y");
     }
 
+    [Fact]
+    public void TestFunctionLiteralWithName()
+    {
+        var input = "let myFunction = fn() { };";
+
+        var lexer = new Lexer(input);
+        var parser = new Parser(lexer);
+
+        var (program, errors) = parser.ParseProgram();
+        CheckParserErrors(errors);
+
+        var statement = Assert.Single(program.Statements);
+        var let = Assert.IsType<LetStatement>(statement);
+        var func = Assert.IsType<FunctionLiteral>(let.Value);
+
+        Assert.Equal("myFunction", func.Name);
+    }
+
     private static void CheckParserErrors(IReadOnlyList<string> errors)
     {
         if (errors.Count == 0)

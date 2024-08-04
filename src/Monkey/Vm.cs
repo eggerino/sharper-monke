@@ -61,12 +61,12 @@ public class Vm
 
     public string? Run()
     {
-        while (GetCurrentFrame().InstructionPointer < GetCurrentFrame().GetInstructions().Count - 1)
+        while (GetCurrentFrame().InstructionPointer < GetCurrentFrame().Closure.Function.Instructions.Count - 1)
         {
             GetCurrentFrame().InstructionPointer++;
 
             var ip = GetCurrentFrame().InstructionPointer;
-            var ins = GetCurrentFrame().GetInstructions();
+            var ins = GetCurrentFrame().Closure.Function.Instructions;
             var op = ins[ip].AsOpcode();
 
             string? error;
@@ -297,10 +297,29 @@ public class Vm
 
                 case Opcode.Closure:
                     constIndex = Instruction.ReadUint16(ins.Slice(ip + 1));
-                    Instruction.ReadUint8(ins.Slice(ip + 3));
+                    var numFree = Instruction.ReadUint8(ins.Slice(ip + 3));
                     GetCurrentFrame().InstructionPointer += 3;
 
-                    error = PushClosure(constIndex);
+                    error = PushClosure(constIndex, numFree);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
+
+                case Opcode.GetFree:
+                    var freeIndex = Instruction.ReadUint8(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 1;
+
+                    error = Push(GetCurrentFrame().Closure.FreeVariables[freeIndex]);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
+
+                case Opcode.CurrentClosure:
+                    error = Push(GetCurrentFrame().Closure);
                     if (error is not null)
                     {
                         return error;
@@ -475,7 +494,7 @@ public class Vm
         {
             Closure x => CallClosure(x, numberOfArguments),
             Builtin x => CallBuiltin(x, numberOfArguments),
-            _ => "ERROR: calling non-function and non-built-in",
+            _ => "ERROR: calling non-closure and non-built-in",
         };
     }
 
@@ -536,7 +555,7 @@ public class Vm
         return Push(value);
     }
 
-    private string? PushClosure(ushort constIndex)
+    private string? PushClosure(ushort constIndex, byte numberOfFrees)
     {
         var constant = _constants[constIndex];
         if (constant is not CompiledFunction function)
@@ -544,7 +563,14 @@ public class Vm
             return $"ERROR: not a function {constant.GetObjectType()}";
         }
 
-        var closure = new Closure(Function: function, ImmutableList<IObject>.Empty);
+        var builder = ImmutableList<IObject>.Empty.ToBuilder();
+        for (var i = 0; i < numberOfFrees; i++)
+        {
+            builder.Add(_stack[_stackPointer - numberOfFrees + i]);
+        }
+        _stackPointer -= numberOfFrees;
+
+        var closure = new Closure(Function: function, builder.ToImmutable());
         return Push(closure);
     }
 

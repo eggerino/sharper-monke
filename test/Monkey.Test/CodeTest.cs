@@ -38,6 +38,8 @@ public class CodeTest
             (Opcode.Return, new int[] {}, new[] {Opcode.Return.AsByte()}),
             (Opcode.GetBuiltin, new int[] {255}, new[] {Opcode.GetBuiltin.AsByte(), (byte)255}),
             (Opcode.Closure, new int[] {65534, 255}, new [] {Opcode.Closure.AsByte(), (byte)255, (byte)254, (byte)255}),
+            (Opcode.GetFree, new int[] {255}, new [] {Opcode.GetFree.AsByte(), (byte)255}),
+            (Opcode.CurrentClosure, new int[] {}, new [] {Opcode.CurrentClosure.AsByte()}),
         };
 
         foreach (var (op, operands, expected) in tests)
@@ -84,6 +86,8 @@ public class CodeTest
             Instruction.Make(Opcode.SetLocal, 255),
             Instruction.Make(Opcode.GetBuiltin, 255),
             Instruction.Make(Opcode.Closure, 65535, 255),
+            Instruction.Make(Opcode.GetFree, 255),
+            Instruction.Make(Opcode.CurrentClosure),
         };
         var concatted = instructions.SelectMany(x => x).ToArray();
 
@@ -118,6 +122,8 @@ public class CodeTest
 0050 OpSetLocal 255
 0052 OpGetBuiltin 255
 0054 OpClosure 65535 255
+0058 OpGetFree 255
+0060 OpCurrentClosure
 ";
 
         var actual = concatted.AsSegment().Disassemble();

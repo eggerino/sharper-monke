@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Monkey.Ast;
+using Monkey.Code;
 using Monkey.Object;
 
 namespace Monkey.Test;
@@ -318,6 +319,108 @@ public class VmTest
             new(Input: "push(1, 1)", new Error("argument to `push` must be Array or Hash, got Integer")),
 
         ]);
+    }
+
+    [Theory]
+    [InlineData("""
+    let newClosure = fn(a) {
+        fn() { a; };
+    };
+    let closure = newClosure(99);
+    closure();
+    """, 99)]
+    [InlineData("""
+    let newAdder = fn(a, b) {
+        fn(c) { a + b + c };
+    };
+    let adder = newAdder(1, 2);
+    adder(8);
+    """, 11)]
+    [InlineData("""
+    let newAdder = fn(a, b) {
+        let c = a + b;
+        fn(d) { c + d };
+    };
+    let adder = newAdder(1, 2);
+    adder(8);
+    """, 11)]
+    [InlineData("""
+    let newAdderOuter = fn(a, b) {
+        let c = a + b;
+        fn(d) {
+            let e = d + c;
+            fn(f) { e + f; };
+        };
+    };
+    let newAdderInner = newAdderOuter(1, 2)
+    let adder = newAdderInner(3);
+    adder(8);
+    """, 14)]
+    [InlineData("""
+    let a = 1;
+    let newAdderOuter = fn(b) {
+        fn(c) {
+            fn(d) { a + b + c + d };
+        };
+    };
+    let newAdderInner = newAdderOuter(2)
+    let adder = newAdderInner(3);
+    adder(8);
+    """, 14)]
+    [InlineData("""
+    let newClosure = fn(a, b) {
+        let one = fn() { a; };
+        let two = fn() { b; };
+        fn() { one() + two(); };
+    };
+    let closure = newClosure(9, 90);
+    closure();
+    """, 99)]
+    public void TestClosures(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
+    }
+
+    [Theory]
+    [InlineData("""
+    let countDown = fn(x) {
+        if (x == 0) {
+            return 0;
+        } else {
+            countDown(x - 1);
+        }
+    };
+    countDown(1);    
+    """, 0)]
+    [InlineData("""
+    let countDown = fn(x) {
+        if (x == 0) {
+            return 0;
+        } else {
+            countDown(x - 1);
+        }
+    };
+    let wrapper = fn() {
+        countDown(1);
+    };
+    wrapper();
+    """, 0)]
+    [InlineData("""
+    let wrapper = fn() {
+        let countDown = fn(x) {
+            if (x == 0) {
+                return 0;
+            } else {
+                countDown(x - 1);
+            }
+        };
+        countDown(1);
+    };
+    wrapper();
+    """, 0)]
+    public void TestRecursiveFunctions(string input, object expected)
+    {
+        RunVmTests([new(input, expected)]);
     }
 
     private static void RunVmTests(IEnumerable<VmTestCase> tests)

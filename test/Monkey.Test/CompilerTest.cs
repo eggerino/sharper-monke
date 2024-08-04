@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using Monkey.Ast;
 using Monkey.Code;
 using Monkey.Object;
@@ -561,6 +562,199 @@ public class CompilerTest
                 ],
                 ExpectedInstructions:[
                     Instruction.Make(Opcode.Closure, 0, 0),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
+    [Fact]
+    public void TestClosure()
+    {
+        RunCompilerTests([
+            new(Input: """
+                fn(a) {
+                    fn(b) {
+                        a + b
+                    }
+                }
+                """,
+                ExpectedConstants: [
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.GetFree, 0),
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Add),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Closure, 0, 1),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                ], ExpectedInstructions: [
+                    Instruction.Make(Opcode.Closure, 1, 0),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: """
+                fn(a) {
+                    fn(b) {
+                        fn(c) {
+                            a + b + c
+                        }
+                    }
+                };
+                """,
+                ExpectedConstants: [
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.GetFree, 0),
+                        Instruction.Make(Opcode.GetFree, 1),
+                        Instruction.Make(Opcode.Add),
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Add),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.GetFree, 0),
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Closure, 0, 2),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Closure, 1, 1),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                ],
+                ExpectedInstructions: [
+                        Instruction.Make(Opcode.Closure, 2, 0),
+                        Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: """
+                let global = 55;
+
+                fn() {
+                    let a = 66;
+
+                    fn() {
+                        let b = 77;
+
+                        fn() {
+                            let c = 88;
+
+                            global + a + b + c;
+                        }
+                    }
+                }
+                """,
+                ExpectedConstants: [
+                    55, 66, 77, 88,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Constant, 3),
+                        Instruction.Make(Opcode.SetLocal, 0),
+                        Instruction.Make(Opcode.GetGlobal, 0),
+                        Instruction.Make(Opcode.GetFree, 0),
+                        Instruction.Make(Opcode.Add),
+                        Instruction.Make(Opcode.GetFree, 1),
+                        Instruction.Make(Opcode.Add),
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Add),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Constant, 2),
+                        Instruction.Make(Opcode.SetLocal, 0),
+                        Instruction.Make(Opcode.GetFree, 0),
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Closure, 4, 2),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Constant, 1),
+                        Instruction.Make(Opcode.SetLocal, 0),
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Closure, 5, 1),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.Closure, 6, 0),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
+    [Fact]
+    public void TestRecursiveFunction()
+    {
+        RunCompilerTests([
+            new(Input: """
+                let countDown = fn(x) { countDown(x - 1); };
+                countDown(1);
+                """,
+                ExpectedConstants: [
+                    1,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.CurrentClosure),
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Constant, 0),
+                        Instruction.Make(Opcode.Sub),
+                        Instruction.Make(Opcode.Call, 1),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                    1,
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Closure, 1, 0),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.GetGlobal, 0),
+                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Call, 1),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: """
+                let wrapper = fn() {
+                    let countDown = fn(x) { countDown(x - 1); };
+                    countDown(1);
+                };
+                wrapper();
+                """,
+                ExpectedConstants: [
+                    1,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.CurrentClosure),
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Constant, 0),
+                        Instruction.Make(Opcode.Sub),
+                        Instruction.Make(Opcode.Call, 1),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                    1,
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.Closure, 1, 0),
+                        Instruction.Make(Opcode.SetLocal, 0),
+                        Instruction.Make(Opcode.GetLocal, 0),
+                        Instruction.Make(Opcode.Constant, 2),
+                        Instruction.Make(Opcode.Call, 1),
+                        Instruction.Make(Opcode.ReturnValue),
+                    },
+                ],
+                ExpectedInstructions: [
+                    Instruction.Make(Opcode.Closure, 3, 0),
+                    Instruction.Make(Opcode.SetGlobal, 0),
+                    Instruction.Make(Opcode.GetGlobal, 0),
+                    Instruction.Make(Opcode.Call, 0),
                     Instruction.Make(Opcode.Pop),
                 ]),
         ]);

@@ -157,4 +157,119 @@ public class SymbolTableTest
             }
         }
     }
+
+    [Fact]
+    public void TestResolveFree()
+    {
+        var global = new SymbolTable();
+        global.Define("a");
+        global.Define("b");
+
+        var firstLocal = global.NewEnclosedTable();
+        firstLocal.Define("c");
+        firstLocal.Define("d");
+
+        var secondLocal = firstLocal.NewEnclosedTable();
+        secondLocal.Define("e");
+        secondLocal.Define("f");
+
+        var tests = new[]
+        {
+            (firstLocal, new[]
+            {
+                new Symbol("a", Scopes.Global, 0),
+                new Symbol("b", Scopes.Global, 1),
+                new Symbol("c", Scopes.Local, 0),
+                new Symbol("d", Scopes.Local, 1),
+            }, new Symbol[] { }),
+            (secondLocal, new[]
+            {
+                new Symbol("a", Scopes.Global, 0),
+                new Symbol("b", Scopes.Global, 1),
+                new Symbol("c", Scopes.Free, 0),
+                new Symbol("d", Scopes.Free, 1),
+                new Symbol("e", Scopes.Local, 0),
+                new Symbol("f", Scopes.Local, 1),
+            }, new []
+            {
+                new Symbol("c", Scopes.Local, 0),
+                new Symbol("d", Scopes.Local, 1),
+            })
+        };
+
+        foreach (var (table, expedted, expectedFree) in tests)
+        {
+            foreach (var e in expedted)
+            {
+                var result = table.Resolve(e.Name);
+                Assert.NotNull(result);
+                Assert.Equal(e, result);
+            }
+
+            Assert.Equal(expectedFree, table.FreeSymbols);
+        }
+    }
+
+    [Fact]
+    public void TestResolveUnresolvableFree()
+    {
+        var global = new SymbolTable();
+        global.Define("a");
+
+        var firstLocal = global.NewEnclosedTable();
+        firstLocal.Define("c");
+
+        var secondLocal = firstLocal.NewEnclosedTable();
+        secondLocal.Define("e");
+        secondLocal.Define("f");
+
+        var expected = new[]
+        {
+            new Symbol("a", Scopes.Global, 0),
+            new Symbol("c", Scopes.Free, 0),
+            new Symbol("e", Scopes.Local, 0),
+            new Symbol("f", Scopes.Local, 1),
+        };
+
+        foreach (var e in expected)
+        {
+            var result = secondLocal.Resolve(e.Name);
+            Assert.NotNull(result);
+            Assert.Equal(e, result);
+        }
+
+        var expectedUnresolvable = new[] { "b", "d" };
+        foreach (var name in expectedUnresolvable)
+        {
+            var result = secondLocal.Resolve(name);
+            Assert.Null(result);
+        }
+    }
+
+    [Fact]
+    public void TestDefineAndResolveFunctionName()
+    {
+        var global = new SymbolTable();
+        global.DefineFunctionName("a");
+
+        var expected = new Symbol("a", Scopes.Function, 0);
+
+        var result = global.Resolve(expected.Name);
+        Assert.NotNull(result);
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void TestShadowingFunctionName()
+    {
+        var global = new SymbolTable();
+        global.DefineFunctionName("a");
+        global.Define("a");
+
+        var expected = new Symbol("a", Scopes.Global, 0);
+
+        var result = global.Resolve(expected.Name);
+        Assert.NotNull(result);
+        Assert.Equal(expected, result);
+    }
 }

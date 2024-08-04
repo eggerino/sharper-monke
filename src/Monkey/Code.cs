@@ -48,6 +48,9 @@ public enum Opcode : byte
     Return,
 
     Closure,
+
+    GetFree,
+    CurrentClosure,
 }
 
 public static class OpcodeExtensions
@@ -89,6 +92,8 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         {Opcode.ReturnValue, new("OpReturnValue", [])},
         {Opcode.Return, new("OpReturn", [])},
         {Opcode.Closure, new("OpClosure", [2, 1])},
+        {Opcode.GetFree, new("OpGetFree", [1])},
+        {Opcode.CurrentClosure, new("OpCurrentClosure", [])},
     };
 
     public static Definition? Of(Opcode op) => _lookUp.TryGetValue(op, out var def) switch
