@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Monkey.Object;
 
 namespace Monkey.Interpreter;
@@ -27,6 +28,10 @@ public static class Repl
             constants = new();
             globals = Vm.CreateGlobalsArray();
             symbolTable = new();
+            foreach (var ((name, _), index) in Builtins.All.Select((x, i) => (x, i)))
+            {
+                symbolTable.DefineBuiltin(index, name);
+            }
         }
         else
         {

@@ -232,7 +232,7 @@ public class Vm
                     var numArgs = Instruction.ReadUint8(ins.Slice(ip + 1));
                     GetCurrentFrame().InstructionPointer += 1;
 
-                    error = CallFunction(numArgs);
+                    error = ExecuteCall(numArgs);
                     if (error is not null)
                     {
                         return error;
@@ -275,6 +275,18 @@ public class Vm
                     GetCurrentFrame().InstructionPointer += 1;
 
                     error = Push(_stack[GetCurrentFrame().BasePointer + localIndex]);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
+
+                case Opcode.GetBuiltin:
+                    var buildinIndex = Instruction.ReadUint8(ins.Slice(ip + 1));
+                    GetCurrentFrame().InstructionPointer += 1;
+
+                    var definition = Builtins.All[buildinIndex];
+                    error = Push(definition.Delegate);
                     if (error is not null)
                     {
                         return error;
@@ -442,23 +454,44 @@ public class Vm
         _ => $"ERROR: index operator not supported: {left.GetObjectType()}",
     };
 
-    private string? CallFunction(int numberOfArguments)
+    private string? ExecuteCall(int numberOfArguments)
     {
-        var top = _stack[_stackPointer - 1 - numberOfArguments];
-        if (top is not CompiledFunction fn)
+        var callee = _stack[_stackPointer - 1 - numberOfArguments];
+        return callee switch
         {
-            return "ERROR: calling non-function";
+            CompiledFunction x => CallFunction(x, numberOfArguments),
+            Builtin x => CallBuiltin(x, numberOfArguments),
+            _ => "ERROR: calling non-function and non-built-in",
+        };
+    }
+
+    private string? CallFunction(CompiledFunction function, int numberOfArguments)
+    {
+        if (numberOfArguments != function.NumberOFParameters)
+        {
+            return $"ERROR: wrong number of arguments: want={function.NumberOFParameters}, got={numberOfArguments}";
         }
 
-        if (numberOfArguments != fn.NumberOFParameters)
-        {
-            return $"ERROR: wrong number of arguments: want={fn.NumberOFParameters}, got={numberOfArguments}";
-        }
-
-        var frame = new Frame(fn, _stackPointer - numberOfArguments);
+        var frame = new Frame(function, _stackPointer - numberOfArguments);
         PushFrame(frame);
 
-        _stackPointer = frame.BasePointer + fn.NumberOfLocals;
+        _stackPointer = frame.BasePointer + function.NumberOfLocals;
+        return null;
+    }
+
+    private string? CallBuiltin(Builtin function, int numberOfArguments)
+    {
+        var args = new ArraySegment<IObject>(_stack, _stackPointer - numberOfArguments, numberOfArguments);
+        
+        var result = function.Function(args);
+        _stackPointer -= numberOfArguments + 1;
+
+        var error = Push(result ?? _null);
+        if (error is not null)
+        {
+            return error;
+        }
+
         return null;
     }
 

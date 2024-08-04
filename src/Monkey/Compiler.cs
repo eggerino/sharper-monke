@@ -34,7 +34,13 @@ public class Compiler
         _constants = constants;
     }
 
-    public Compiler() : this(new(), []) { }
+    public Compiler() : this(new(), [])
+    {
+        foreach (var ((name, _), index) in Builtins.All.Select((x, i) => (x, i)))
+        {
+            _symbolTable.DefineBuiltin(index, name);
+        }
+    }
 
     public static Compiler NewWithState(SymbolTable table, List<IObject> constants) => new(table, constants);
 
@@ -143,16 +149,27 @@ public class Compiler
             return $"ERROR: undefined variable {ident.Value}";
         }
 
-        if (symbol.Scope == Scopes.Global)
-        {
-            Emit(Opcode.GetGlobal, symbol.Index);
-        }
-        else
-        {
-            Emit(Opcode.GetLocal, symbol.Index);
-        }
+        LoadSymbol(symbol);
 
         return null;
+    }
+
+    private void LoadSymbol(Symbol symbol)
+    {
+        switch (symbol.Scope)
+        {
+            case Scopes.Global:
+                Emit(Opcode.GetGlobal, symbol.Index);
+                break;
+
+            case Scopes.Local:
+                Emit(Opcode.GetLocal, symbol.Index);
+                break;
+
+            case Scopes.Builtin:
+                Emit(Opcode.GetBuiltin, symbol.Index);
+                break;
+        }
     }
 
     private string? CompileInfixExpression(InfixExpression infixExpression)

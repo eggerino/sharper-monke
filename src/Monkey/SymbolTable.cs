@@ -6,6 +6,7 @@ public static class Scopes
 {
     public const string Global = "GLOBAL";
     public const string Local = "LOCAL";
+    public const string Builtin = "BUILTIN";
 }
 
 public record Symbol(string Name, string Scope, int Index);
@@ -35,6 +36,13 @@ public class SymbolTable
         var symbol = new Symbol(Name: name, Scope: scope, Index: _numDefinitions);
         _store.Add(name, symbol);
         _numDefinitions++;
+        return symbol;
+    }
+
+    public Symbol DefineBuiltin(int index, string name)
+    {
+        var symbol = new Symbol(Name: name, Scope: Scopes.Builtin, Index: index);
+        _store.Add(name, symbol);
         return symbol;
     }
 

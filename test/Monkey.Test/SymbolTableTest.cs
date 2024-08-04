@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Monkey.Test;
 
@@ -122,6 +123,36 @@ public class SymbolTableTest
             {
                 var result = table.Resolve(e.Name);
                 Assert.NotNull(result);
+                Assert.Equal(e, result);
+            }
+        }
+    }
+
+    [Fact]
+    public void TestDefineResolveBuiltins()
+    {
+        var global = new SymbolTable();
+        var firstLocal = global.NewEnclosedTable();
+        var secondLocal = firstLocal.NewEnclosedTable();
+
+        var expected = new[]
+        {
+            new Symbol("a", Scopes.Builtin, 0),
+            new Symbol("c", Scopes.Builtin, 1),
+            new Symbol("e", Scopes.Builtin, 2),
+            new Symbol("f", Scopes.Builtin, 3),
+        };
+
+        foreach (var (e, i) in expected.Select((x, i) => (x, i)))
+        {
+            global.DefineBuiltin(i, e.Name);
+        }
+
+        foreach (var table in new[] { global, firstLocal, secondLocal })
+        {
+            foreach (var e in expected)
+            {
+                var result = table.Resolve(e.Name);
                 Assert.Equal(e, result);
             }
         }

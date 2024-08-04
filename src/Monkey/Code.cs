@@ -36,6 +36,8 @@ public enum Opcode : byte
     GetLocal,
     SetLocal,
 
+    GetBuiltin,
+
     Array,
     Hash,
 
@@ -77,6 +79,7 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         {Opcode.SetGlobal, new("OpSetGlobal", [2])},
         {Opcode.GetLocal, new("OpGetLocal", [1])},
         {Opcode.SetLocal, new("OpSetLocal", [1])},
+        {Opcode.GetBuiltin, new("OpGetBuiltin", [1])},
         {Opcode.Array, new("OpArray", [2])},
         {Opcode.Hash, new("OpHash", [2])},
         {Opcode.Index, new("OpIndex", [])},

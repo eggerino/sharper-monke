@@ -532,6 +532,40 @@ public class CompilerTest
         ]);
     }
 
+    [Fact]
+    public void TestBuiltins()
+    {
+        RunCompilerTests([
+            new(Input: "len([]); push([], 1);",
+                ExpectedConstants: [1],
+                ExpectedInstructions:[
+                    Instruction.Make(Opcode.GetBuiltin, 0),
+                    Instruction.Make(Opcode.Array, 0),
+                    Instruction.Make(Opcode.Call, 1),
+                    Instruction.Make(Opcode.Pop),
+                    Instruction.Make(Opcode.GetBuiltin, 4),
+                    Instruction.Make(Opcode.Array, 0),
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Call, 2),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+            new(Input: "fn() { len([]) }",
+                ExpectedConstants: [
+                    new IEnumerable<byte>[]
+                    {
+                        Instruction.Make(Opcode.GetBuiltin, 0),
+                        Instruction.Make(Opcode.Array, 0),
+                        Instruction.Make(Opcode.Call, 1),
+                        Instruction.Make(Opcode.ReturnValue),
+                    }
+                ],
+                ExpectedInstructions:[
+                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Pop),
+                ]),
+        ]);
+    }
+
     private static void RunCompilerTests(IEnumerable<CompilerTestCase> tests)
     {
         foreach (var test in tests)

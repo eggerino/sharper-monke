@@ -294,12 +294,31 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    [Fact]
+    public void TestBuiltinFunctions()
+    {
+        RunVmTests([
+            new(Input: "len(\"\")", 0),
+            new(Input: "len(\"four\")", 4),
+            new(Input: "len(\"Hello World\")", 11),
+            new(Input: "len(1)", new Error("argument to `len` not supported, got Integer")),
+            new(Input: "len(\"one\", \"two\")", new Error("wrong number of arguments. got=2, want=1")),
+            new(Input: "len([1, 2, 3])", 3),
+            new(Input: "len([])", 0),
+            new(Input: "puts(\"hello\", \"world\")", null),
+            new(Input: "first([1, 2, 3])", 1),
+            new(Input: "first([])", null),
+            new(Input: "first(1)", new Error("argument to `first` must be Array, got Integer")),
+            new(Input: "last([1, 2, 3])", 3),
+            new(Input: "last([])", null),
+            new(Input: "last(1)", new Error("argument to `last` must be Array, got Integer")),
+            new(Input: "rest([1, 2, 3])", new[] { 2, 3 }),
+            new(Input: "rest([])", null),
+            new(Input: "push([], 1)", new[] { 1 }),
+            new(Input: "push(1, 1)", new Error("argument to `push` must be Array or Hash, got Integer")),
 
-
-
-
-
-
+        ]);
+    }
 
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
@@ -356,6 +375,7 @@ public class VmTest
             string x => a => TestStringObject(x, a),
             int[] x => a => TestIntArrayObject(x, a),
             Dictionary<IHashable, long> x => a => TestIntHashObject(x, a),
+            Error x => a => TestErrorObject(x, a),
             _ => _ => Assert.Fail($"Unhandled test case for expected type {expected.GetType()}"),
         };
 
@@ -400,5 +420,11 @@ public class VmTest
             var aValue = actualHash.Pairs[eKey];
             TestIntegerObject(eValue, aValue);
         }
+    }
+
+    private static void TestErrorObject(Error expected, IObject actual)
+    {
+        var actualError = Assert.IsType<Error>(actual);
+        Assert.Equal(expected, actualError);
     }
 }
