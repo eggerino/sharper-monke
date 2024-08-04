@@ -22,6 +22,7 @@ public enum ObjectType
     Quote,
     Macro,
     CompiledFunction,
+    Closure,
 }
 
 public interface IObject
@@ -158,5 +159,15 @@ public record CompiledFunction(ArraySegment<byte> Instructions, int NumberOfLoca
     public string Inspect()
     {
         return $"CompiledFunction[{GetHashCode()}]";
+    }
+}
+
+public record Closure(CompiledFunction Function, ImmutableList<IObject> FreeVariables) : IObject
+{
+    public ObjectType GetObjectType() => ObjectType.Closure;
+
+    public string Inspect()
+    {
+        return $"Closure[{GetHashCode()}]";
     }
 }

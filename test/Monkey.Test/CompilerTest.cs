@@ -352,7 +352,7 @@ public class CompilerTest
                     },
                 ],
                 ExpectedInstructions: [
-                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Closure, 2, 0),
                     Instruction.Make(Opcode.Pop),
                 ]),
             new(Input: "fn() { 5 + 10 }",
@@ -368,7 +368,7 @@ public class CompilerTest
                     },
                 ],
                 ExpectedInstructions: [
-                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Closure, 2, 0),
                     Instruction.Make(Opcode.Pop),
                 ]),
             new(Input: "fn() { 1; 2 }",
@@ -384,7 +384,7 @@ public class CompilerTest
                     },
                 ],
                 ExpectedInstructions: [
-                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Closure, 2, 0),
                     Instruction.Make(Opcode.Pop),
                 ]),
             new(Input: "fn() { }",
@@ -395,7 +395,7 @@ public class CompilerTest
                     },
                 ],
                 ExpectedInstructions: [
-                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Closure, 0, 0),
                     Instruction.Make(Opcode.Pop),
                 ]),
         ]);
@@ -415,7 +415,7 @@ public class CompilerTest
                     }
                 ],
                 ExpectedInstructions: [
-                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Closure, 1, 0),
                     Instruction.Make(Opcode.Call, 0),
                     Instruction.Make(Opcode.Pop),
                 ]),
@@ -429,7 +429,7 @@ public class CompilerTest
                     }
                 ],
                 ExpectedInstructions: [
-                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Closure, 1, 0),
                     Instruction.Make(Opcode.SetGlobal, 0),
                     Instruction.Make(Opcode.GetGlobal, 0),
                     Instruction.Make(Opcode.Call, 0),
@@ -445,7 +445,7 @@ public class CompilerTest
                     24,
                 ],
                 ExpectedInstructions: [
-                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Closure, 0, 0),
                     Instruction.Make(Opcode.SetGlobal, 0),
                     Instruction.Make(Opcode.GetGlobal, 0),
                     Instruction.Make(Opcode.Constant, 1),
@@ -468,7 +468,7 @@ public class CompilerTest
                     26,
                 ],
                 ExpectedInstructions: [
-                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Closure, 0, 0),
                     Instruction.Make(Opcode.SetGlobal, 0),
                     Instruction.Make(Opcode.GetGlobal, 0),
                     Instruction.Make(Opcode.Constant, 1),
@@ -496,7 +496,7 @@ public class CompilerTest
                 ExpectedInstructions: [
                     Instruction.Make(Opcode.Constant, 0),
                     Instruction.Make(Opcode.SetGlobal, 0),
-                    Instruction.Make(Opcode.Constant, 1),
+                    Instruction.Make(Opcode.Closure, 1, 0),
                     Instruction.Make(Opcode.Pop),
                 ]),
             new(Input: "let num = 55; num",
@@ -526,7 +526,7 @@ public class CompilerTest
                     },
                 ],
                 ExpectedInstructions: [
-                    Instruction.Make(Opcode.Constant, 2),
+                    Instruction.Make(Opcode.Closure, 2, 0),
                     Instruction.Make(Opcode.Pop),
                 ]),
         ]);
@@ -560,7 +560,7 @@ public class CompilerTest
                     }
                 ],
                 ExpectedInstructions:[
-                    Instruction.Make(Opcode.Constant, 0),
+                    Instruction.Make(Opcode.Closure, 0, 0),
                     Instruction.Make(Opcode.Pop),
                 ]),
         ]);

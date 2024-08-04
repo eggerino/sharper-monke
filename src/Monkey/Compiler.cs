@@ -435,7 +435,9 @@ public class Compiler
 
         var compiledFunc = new CompiledFunction(instructions.ToArray().AsSegment(), numLocals, literal.Parameters.Count);
 
-        Emit(Opcode.Constant, AddConstant(compiledFunc));
+        var fnIndex = AddConstant(compiledFunc);
+        Emit(Opcode.Closure, fnIndex, 0);
+
         return null;
     }
 

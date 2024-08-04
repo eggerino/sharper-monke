@@ -46,6 +46,8 @@ public enum Opcode : byte
     Call,
     ReturnValue,
     Return,
+
+    Closure,
 }
 
 public static class OpcodeExtensions
@@ -86,6 +88,7 @@ public record Definition(string Name, IReadOnlyList<int> OperandWidths)
         {Opcode.Call, new("OpCall", [1])},
         {Opcode.ReturnValue, new("OpReturnValue", [])},
         {Opcode.Return, new("OpReturn", [])},
+        {Opcode.Closure, new("OpClosure", [2, 1])},
     };
 
     public static Definition? Of(Opcode op) => _lookUp.TryGetValue(op, out var def) switch
@@ -196,6 +199,7 @@ public static class Instruction
         {
             0 => def.Name,
             1 => $"{def.Name} {operands[0]}",
+            2 => $"{def.Name} {operands[0]} {operands[1]}",
             _ => $"ERROR: unhandled operandCount for {def.Name}\n",
         };
     }

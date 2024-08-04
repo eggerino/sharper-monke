@@ -5,13 +5,13 @@ namespace Monkey;
 
 public class Frame
 {
-    private readonly CompiledFunction _function;
+    private readonly Closure _closure;
 
-    public Frame(CompiledFunction function, int basePointer) => (_function, BasePointer) = (function, basePointer);
+    public Frame(Closure closure, int basePointer) => (_closure, BasePointer) = (closure, basePointer);
 
     public int InstructionPointer { get; set; } = -1;
 
     public int BasePointer { get; }
 
-    public ArraySegment<byte> GetInstructions() => _function.Instructions;
+    public ArraySegment<byte> GetInstructions() => _closure.Function.Instructions;
 }

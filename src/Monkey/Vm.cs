@@ -37,7 +37,8 @@ public class Vm
         _globals = globals;
 
         var mainFunction = new CompiledFunction(byteCode.Instructions.ToArray().AsSegment(), -1, 0);
-        var mainFrame = new Frame(mainFunction, 0);
+        var mainClosure = new Closure(mainFunction, ImmutableList<IObject>.Empty);
+        var mainFrame = new Frame(mainClosure, 0);
 
         _frames = new Frame[FramesSize];
         _frames[0] = mainFrame;
@@ -74,10 +75,11 @@ public class Vm
             int numElements;
             byte localIndex;
             Frame frame;
+            ushort constIndex;
             switch (op)
             {
                 case Opcode.Constant:
-                    var constIndex = Instruction.ReadUint16(ins.Slice(ip + 1));
+                    constIndex = Instruction.ReadUint16(ins.Slice(ip + 1));
                     GetCurrentFrame().InstructionPointer += 2;
 
                     error = Push(_constants[constIndex]);
@@ -292,6 +294,18 @@ public class Vm
                         return error;
                     }
                     break;
+
+                case Opcode.Closure:
+                    constIndex = Instruction.ReadUint16(ins.Slice(ip + 1));
+                    Instruction.ReadUint8(ins.Slice(ip + 3));
+                    GetCurrentFrame().InstructionPointer += 3;
+
+                    error = PushClosure(constIndex);
+                    if (error is not null)
+                    {
+                        return error;
+                    }
+                    break;
             }
         }
 
@@ -459,31 +473,31 @@ public class Vm
         var callee = _stack[_stackPointer - 1 - numberOfArguments];
         return callee switch
         {
-            CompiledFunction x => CallFunction(x, numberOfArguments),
+            Closure x => CallClosure(x, numberOfArguments),
             Builtin x => CallBuiltin(x, numberOfArguments),
             _ => "ERROR: calling non-function and non-built-in",
         };
     }
 
-    private string? CallFunction(CompiledFunction function, int numberOfArguments)
+    private string? CallClosure(Closure closure, int numberOfArguments)
     {
-        if (numberOfArguments != function.NumberOFParameters)
+        if (numberOfArguments != closure.Function.NumberOFParameters)
         {
-            return $"ERROR: wrong number of arguments: want={function.NumberOFParameters}, got={numberOfArguments}";
+            return $"ERROR: wrong number of arguments: want={closure.Function.NumberOFParameters}, got={numberOfArguments}";
         }
 
-        var frame = new Frame(function, _stackPointer - numberOfArguments);
+        var frame = new Frame(closure, _stackPointer - numberOfArguments);
         PushFrame(frame);
 
-        _stackPointer = frame.BasePointer + function.NumberOfLocals;
+        _stackPointer = frame.BasePointer + closure.Function.NumberOfLocals;
         return null;
     }
 
-    private string? CallBuiltin(Builtin function, int numberOfArguments)
+    private string? CallBuiltin(Builtin builtin, int numberOfArguments)
     {
         var args = new ArraySegment<IObject>(_stack, _stackPointer - numberOfArguments, numberOfArguments);
         
-        var result = function.Function(args);
+        var result = builtin.Function(args);
         _stackPointer -= numberOfArguments + 1;
 
         var error = Push(result ?? _null);
@@ -520,6 +534,18 @@ public class Vm
         }
 
         return Push(value);
+    }
+
+    private string? PushClosure(ushort constIndex)
+    {
+        var constant = _constants[constIndex];
+        if (constant is not CompiledFunction function)
+        {
+            return $"ERROR: not a function {constant.GetObjectType()}";
+        }
+
+        var closure = new Closure(Function: function, ImmutableList<IObject>.Empty);
+        return Push(closure);
     }
 
     private string? Push(IObject value)
