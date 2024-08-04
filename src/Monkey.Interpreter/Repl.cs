@@ -6,7 +6,7 @@ namespace Monkey.Interpreter;
 
 public static class Repl
 {
-    public static void Run(TextReader inputReader, TextWriter outputWriter, bool useVm = true)
+    public static void Run(TextReader inputReader, TextWriter outputWriter, bool useVm)
     {
         outputWriter.WriteLine($"Hello {System.Environment.UserName}! This is the Monkey Programming Language!");
         outputWriter.WriteLine("Feel free to type in commands");
@@ -82,8 +82,7 @@ public static class Repl
         var error = compiler.Compile(program);
         if (error is not null)
         {
-            outputWriter.WriteLine("Woops! Compilation failed:");
-            outputWriter.WriteLine(error);
+            Errors.PrintCompilerError(outputWriter, error);
             return;
         }
 
@@ -91,8 +90,7 @@ public static class Repl
         error = machine.Run();
         if (error is not null)
         {
-            outputWriter.WriteLine("Woops! Executing bytecode failed:");
-            outputWriter.WriteLine(error);
+            Errors.PrintVmError(outputWriter, error);
             return;
         }
 

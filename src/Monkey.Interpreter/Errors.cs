@@ -18,14 +18,36 @@ public static class Errors
            '-----'
 ";
 
-    public static void PrintParserErrors(TextWriter outputWriter, IEnumerable<string> errors)
+    private static void PrintHeader(TextWriter outputWriter)
     {
         outputWriter.WriteLine(_monkeyFace);
         outputWriter.WriteLine("Woops! We ran into some monkey business here!");
-        outputWriter.WriteLine(" parser errors:");
+    }
+
+    public static void PrintParserErrors(TextWriter outputWriter, IEnumerable<string> errors)
+    {
+        PrintHeader(outputWriter);
+        outputWriter.WriteLine(" Parser errors:");
         foreach (var error in errors)
         {
-            outputWriter.WriteLine($"\t{error}");
+            outputWriter.Write("\t");
+            outputWriter.WriteLine(error);
         }
+    }
+
+    public static void PrintCompilerError(TextWriter outputWriter, string error)
+    {
+        PrintHeader(outputWriter);
+        outputWriter.WriteLine(" Compiler error:");
+        outputWriter.Write("\t");
+        outputWriter.WriteLine(error);
+    }
+
+    public static void PrintVmError(TextWriter outputWriter, string error)
+    {
+        PrintHeader(outputWriter);
+        outputWriter.WriteLine(" Virtual machine error:");
+        outputWriter.Write("\t");
+        outputWriter.WriteLine(error);
     }
 }

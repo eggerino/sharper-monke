@@ -4,7 +4,7 @@ namespace Monkey.Interpreter;
 
 public static class Interpreter
 {
-    public static void Execute(string filePath)
+    public static void Execute(string filePath, bool useVm)
     {
         var source = File.ReadAllText(filePath);
         var lexer = new Lexer(source);
@@ -13,17 +13,47 @@ public static class Interpreter
 
         if (errors.Count > 0)
         {
-            Errors.PrintParserErrors(System.Console.Out, errors);
+            Errors.PrintParserErrors(System.Console.Error, errors);
+            System.Environment.Exit(1);
+        }
+
+        if (useVm)
+        {
+            ExecuteVm(program);
         }
         else
         {
-            var environment = new Environment();
-            var macroEnvironment = new Environment();
+            ExecuteInterpreter(program);
+        }
+    }
 
-            program = MacroExpansion.DefineMacros(program, macroEnvironment);
-            var expanded = MacroExpansion.ExpandMacros(program, macroEnvironment);
+    public static void ExecuteInterpreter(Ast.Program program)
+    {
+        var environment = new Environment();
+        var macroEnvironment = new Environment();
 
-            Evaluator.Eval(expanded, environment);
+        program = MacroExpansion.DefineMacros(program, macroEnvironment);
+        var expanded = MacroExpansion.ExpandMacros(program, macroEnvironment);
+
+        Evaluator.Eval(expanded, environment);
+    }
+
+    public static void ExecuteVm(Ast.Program program)
+    {
+        var compiler = new Compiler();
+        var error = compiler.Compile(program);
+        if (error is not null)
+        {
+            Errors.PrintCompilerError(System.Console.Error, error);
+            System.Environment.Exit(1);
+        }
+
+        var vm = new Vm(compiler.GetByteCode());
+        error = vm.Run();
+        if (error is not null)
+        {
+            Errors.PrintVmError(System.Console.Error, error);
+            System.Environment.Exit(1);
         }
     }
 }
