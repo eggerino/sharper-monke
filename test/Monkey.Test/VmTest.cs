@@ -423,6 +423,25 @@ public class VmTest
         RunVmTests([new(input, expected)]);
     }
 
+    [Fact]
+    public void TestRecursiveFibonacci()
+    {
+        RunVmTests([new("""
+            let fibonacci = fn(x) {
+                if (x == 0) {
+                    return 0;
+                } else {
+                    if (x == 1) {
+                        return 1;
+                    } else {
+                        fibonacci(x - 1) + fibonacci(x - 2);
+                    }
+                }
+            };
+            fibonacci(15);
+            """, 610)]);
+    }
+
     private static void RunVmTests(IEnumerable<VmTestCase> tests)
     {
         foreach (var test in tests)

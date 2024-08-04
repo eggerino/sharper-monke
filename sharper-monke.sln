@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monkey.Test", "test\Monkey.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monkey.Interpreter", "src\Monkey.Interpreter\Monkey.Interpreter.csproj", "{DC37FC02-B40D-4630-8A45-B0B9ABDE9D2E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monkey.Benchmark", "src\Monkey.Benchmark\Monkey.Benchmark.csproj", "{FD81C11A-4043-4A68-A1C2-FC9403F3E636}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,10 +36,15 @@ Global
 		{DC37FC02-B40D-4630-8A45-B0B9ABDE9D2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC37FC02-B40D-4630-8A45-B0B9ABDE9D2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC37FC02-B40D-4630-8A45-B0B9ABDE9D2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD81C11A-4043-4A68-A1C2-FC9403F3E636}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD81C11A-4043-4A68-A1C2-FC9403F3E636}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD81C11A-4043-4A68-A1C2-FC9403F3E636}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD81C11A-4043-4A68-A1C2-FC9403F3E636}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{AF3DDC37-B4AD-48FF-AEBE-9179708E650F} = {9C965E4C-409F-4413-B985-70F1A2EB22F6}
 		{BF02D5CD-4BE1-452A-9517-A332AEE3F10D} = {D7504F60-847E-430B-9E6F-7E28CDC27D42}
 		{DC37FC02-B40D-4630-8A45-B0B9ABDE9D2E} = {9C965E4C-409F-4413-B985-70F1A2EB22F6}
+		{FD81C11A-4043-4A68-A1C2-FC9403F3E636} = {9C965E4C-409F-4413-B985-70F1A2EB22F6}
 	EndGlobalSection
 EndGlobal
